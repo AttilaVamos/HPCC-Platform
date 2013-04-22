@@ -409,6 +409,7 @@ static void eclsyntaxerror(HqlGram * parser, const char * s, short yystate, int 
   STREAMED
   SUCCESS
   SUM
+  SUPRESSEMPTY
   SWAPPED
   TABLE
   TAN
@@ -5774,10 +5775,11 @@ primexpr1
                                 parser->reportError(ERR_NEGATIVE_WIDTH, $5, "REALFORMAT does not support negative widths");
                             $$.setExpr(createValue(no_realformat, makeStringType(UNKNOWN_LENGTH, NULL, NULL), $3.getExpr(), $5.getExpr(), $7.getExpr()));
                         }
-    | TOXML '(' dataRow ')'
+    | TOXML '(' dataRow optToxmlOptions ')'
                         {
-                            //MORE Could allow ,NOTRIM,OPT,???flags
-                            $$.setExpr(createValue(no_toxml, makeUtf8Type(UNKNOWN_LENGTH, NULL), $3.getExpr()));
+                            OwnedHqlExpr expr = $3.getExpr();
+                            OwnedHqlExpr flags = $4.getExpr();
+                            $$.setExpr(createToxmlExpr(expr, flags));
                         }
     | REGEXFIND '(' expression ',' expression regexOpt ')'
                         {
@@ -9757,6 +9759,22 @@ headingOption
                         {
                             //MORE: This really should check the prototype matches what we expect
                             $$.setExpr(createExprAttribute(formatAtom, $3.getExpr()), $1);
+                        }
+    ;
+
+optToxmlOptions
+	:                   {   $$.setNullExpr(); }
+	| toxmlOptions
+	;
+
+toxmlOptions
+    : ',' toxmlOption	 { $$.setExpr($2.getExpr()); }
+    ;
+
+toxmlOption
+    : SUPRESSEMPTY      {
+                            $$.setExpr(createAttribute(supressEmptyAtom));
+                            $$.setPosition($1);
                         }
     ;
 

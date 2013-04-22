@@ -10269,6 +10269,7 @@ static void getTokenText(StringBuffer & msg, int token)
     case STORED: msg.append("STORED"); break;
     case STREAMED: msg.append("STREAMED"); break;
     case SUCCESS: msg.append("SUCCESS"); break;
+    case SUPRESSEMPTY: msg.append("SUPRESSEMPTY"); break;
     case SUM: msg.append("SUM"); break;
     case SWAPPED: msg.append("SWAPPED"); break;
     case TABLE: msg.append("TABLE"); break;

@@ -907,6 +907,7 @@ STEPPED             { RETURNSYM(STEPPED); }
 STORED              { RETURNSYM(STORED); }
 STREAMED            { RETURNSYM(STREAMED); }
 SUCCESS             { RETURNSYM(SUCCESS); }
+SUPRESSEMPTY		{ RETURNSYM(SUPRESSEMPTY); }
 SUM                 { RETURNSYM(SUM); }
 TABLE               { RETURNSYM(TABLE); }
 TAN                 { RETURNSYM(TAN); }

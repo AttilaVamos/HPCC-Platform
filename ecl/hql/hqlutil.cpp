@@ -3351,6 +3351,22 @@ IHqlExpression * createTrimExpr(IHqlExpression * value, IHqlExpression * flags)
     return createValue(no_trim, tgtType, args);
 }
 
+IHqlExpression * createToxmlExpr(IHqlExpression * value, IHqlExpression * flags)
+{
+    LinkedHqlExpr expr = value;
+    ITypeInfo * srcType = expr->queryType();
+    ITypeInfo * tgtType;
+
+    tgtType = makeUtf8Type(UNKNOWN_LENGTH, srcType->queryLocale());
+
+    HqlExprArray args;
+    args.append(*LINK(expr));
+    if (flags)
+    	flags->unwindList(args, no_comma);
+
+    return createValue(no_toxml, tgtType, args);
+}
+
 bool isLengthPreservingCast(IHqlExpression * expr)
 {
     if (!isCast(expr))

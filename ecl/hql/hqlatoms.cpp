@@ -362,6 +362,7 @@ _ATOM _streaming_Atom;
 _ATOM successAtom;
 _ATOM supportsImportAtom;
 _ATOM supportsScriptAtom;
+_ATOM supressEmptyAtom;
 _ATOM sysAtom;
 _ATOM tempAtom;
 _ATOM templateAtom;
@@ -787,6 +788,7 @@ MODULE_INIT(INIT_PRIORITY_HQLATOM)
     MAKEATOM(tomita);
     MAKEATOM(top);
     MAKEATOM(trim);
+    MAKEATOM(supressEmpty);
     MAKEATOM(true);
     MAKEATOM(type);
     MAKESYSATOM(uid);
