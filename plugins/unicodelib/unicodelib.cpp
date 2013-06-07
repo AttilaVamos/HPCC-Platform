@@ -618,6 +618,56 @@ static RuleBasedCollator * queryRBCollator(const char * localename)
     return loc->queryCollator();
 }
 
+static BreakIterator * createBIterator(const char * localename)
+{
+    UErrorCode status = U_ZERO_ERROR;
+    Locale locale(localename);
+    BreakIterator * bi = (BreakIterator*)RuleBasedBreakIterator::createWordInstance(locale, status);
+    if (U_FAILURE(status))
+    {
+        delete bi;
+        return NULL;
+    }
+    return bi;
+
+}
+
+class BILocale
+{
+public:
+    BILocale(char const * _locale) : locale(_locale)
+    {
+        bi = createBIterator(locale);
+    }
+    ~BILocale()
+    {
+        delete bi;
+    }
+    BreakIterator * queryIterator() const { return bi; }
+private:
+    StringAttr locale;
+    BreakIterator * bi;
+};
+
+typedef MapStringTo<BILocale, char const *> MapStrToBI;
+static MapStrToBI * localeBIMap;
+
+static BreakIterator * queryBIterator(const char * localename)
+{
+    if (!localename) localename = "";
+    CriticalBlock b(localeCrit);
+    if (!localeBIMap)
+        localeBIMap = new MapStrToBI;
+    BILocale * loc = localeBIMap->getValue(localename);
+    if(!loc)
+    {
+        const char * normalizedlocale = localename;
+        localeBIMap->setValue(localename, normalizedlocale);
+        loc = localeBIMap->getValue(localename);
+    }
+    return loc->queryIterator();
+}
+
 }//namespace
 
 using namespace nsUnicodelib;
@@ -1107,38 +1157,65 @@ UNICODELIB_API bool UNICODELIB_CALL ulUnicodeLocaleEditDistanceWithinRadius(unsi
     return distance <= radius;
 }
 
+//#define USE_OLD_CODE
+
 UNICODELIB_API unsigned UNICODELIB_CALL ulUnicodeLocaleWordCount(unsigned textLen, UChar const * text,  char const * localename)
 {
-    UErrorCode status = U_ZERO_ERROR;  
-    Locale locale(localename);
-    RuleBasedBreakIterator* bi = (RuleBasedBreakIterator*)RuleBasedBreakIterator::createWordInstance(locale, status);
-    UnicodeString uText(text, textLen);
-    uText.trim();
-    unsigned count = doCountWords(*bi, uText);
-    delete bi;
+    unsigned count = 0;
+    if(textLen > 0 )
+    {
+        UErrorCode status = U_ZERO_ERROR;
+#ifdef USE_OLD_CODE
+        Locale locale(localename);
+        RuleBasedBreakIterator* bi = (RuleBasedBreakIterator*)RuleBasedBreakIterator::createWordInstance(locale, status);
+#else
+        RuleBasedBreakIterator* bi = (RuleBasedBreakIterator*)(queryBIterator(localename)->createBufferClone(NULL, (int&)textLen, status));
+#endif
+        UnicodeString uText(text, textLen);
+        uText.trim();
+        count = doCountWords(*bi, uText);
+#ifdef USE_OLD_CODE
+        delete bi;
+#endif
+    }
     return count;
 }
 
 UNICODELIB_API void UNICODELIB_CALL ulUnicodeLocaleGetNthWord(unsigned & tgtLen, UChar * & tgt, unsigned textLen, UChar const * text, unsigned n, char const * localename)
 {
-    UErrorCode status = U_ZERO_ERROR;  
-    Locale locale(localename);
-    RuleBasedBreakIterator* bi = (RuleBasedBreakIterator*)RuleBasedBreakIterator::createWordInstance(locale, status);
+    tgtLen = 0;
+    tgt = 0;
 
-    UnicodeString uText(text, textLen);
-    uText.trim();
-    UnicodeString word = getNthWord(*bi, uText, n);
-    delete bi;
-    if(word.length()>0)
+    if( textLen > 0 )
     {
-        tgtLen = word.length();
-        tgt = (UChar *)CTXMALLOC(parentCtx, tgtLen*2);
-        word.extract(0, tgtLen, tgt);
-    }
-    else
-    {
-        tgtLen = 0;
-        tgt = 0;
+        UErrorCode status = U_ZERO_ERROR;
+#ifdef USE_OLD_CODE
+        Locale locale(localename);
+        RuleBasedBreakIterator* bi = (RuleBasedBreakIterator*)RuleBasedBreakIterator::createWordInstance(locale, status);
+#else
+        RuleBasedBreakIterator* bi = (RuleBasedBreakIterator*)(queryBIterator(localename)->createBufferClone(NULL, (int&)textLen, status));
+
+        if(!bi)
+        {
+            UnicodeString uText("NULL *bi!", 10);
+            tgtLen = uText.length();
+            tgt = (UChar *)CTXMALLOC(parentCtx, tgtLen*2);
+            uText.extract(0, tgtLen, tgt);
+            return;
+        }
+#endif
+        UnicodeString uText(text, textLen);
+        uText.trim();
+        UnicodeString word = getNthWord(*bi, uText, n);
+#ifdef USE_OLD_CODE
+        delete bi;
+#endif
+        if(word.length()>0)
+        {
+            tgtLen = word.length();
+            tgt = (UChar *)CTXMALLOC(parentCtx, tgtLen*2);
+            word.extract(0, tgtLen, tgt);
+        }
     }
 }
 
