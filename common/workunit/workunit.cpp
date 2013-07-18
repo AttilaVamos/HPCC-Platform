@@ -7894,6 +7894,8 @@ void CLocalWUException::setExceptionSource(const char *str)
 
 void CLocalWUException::setExceptionMessage(const char *str)
 {
+    //-AV-
+    PrintStackReport();
     p->setProp(NULL, str);
 }
 
@@ -7914,6 +7916,8 @@ void CLocalWUException::setTimeStamp(const char *str)
 
 void CLocalWUException::setExceptionFileName(const char *str)
 {
+    //-AV-
+    PrintStackReport();
     p->setProp("@filename", str);
 }
 

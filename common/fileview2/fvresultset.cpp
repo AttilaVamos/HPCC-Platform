@@ -3331,8 +3331,11 @@ inline const char *getSeverityTagname(WUExceptionSeverity severity, unsigned fla
     return "Exception";
 }
 
+#pragma message "Hova epul be?"
 extern FILEVIEW_API IStringVal& getFullWorkUnitResultsXML(const char *username, const char *password, const IConstWorkUnit *cw, IStringVal &str, unsigned flags, WUExceptionSeverity minSeverity)
 {
+    //-AV-
+    PrintStackReport();
     SCMStringBuffer wuid;
     cw->getWuid(wuid);
     StringBuffer result;

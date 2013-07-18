@@ -195,6 +195,8 @@ int CSoapService::processRequest(ISoapMessage &req, ISoapMessage& resp)
         }
     }
 
+    DBGLOG("-AV- requeststr: [%s]", requeststr.str());
+
     CBody* req_body = req_envelope->get_body();
     Owned<CRpcResponse> rpc_response;
     rpc_response.setown(new CRpcResponse);

@@ -22,6 +22,8 @@
 #include "jregexp.hpp"
 #include "workflow.hpp"
 
+#define TRACE_WORKFLOW
+
 //------------------------------------------------------------------------------------------
 // Workflow
 

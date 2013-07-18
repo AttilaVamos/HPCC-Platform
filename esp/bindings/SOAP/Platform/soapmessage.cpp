@@ -279,6 +279,8 @@ void CRpcMessage::unmarshall(XmlPullParser* xpp, CSoapValue* soapvalue, const ch
             const char* localname = stag.getLocalName();
             const char* valuetype = stag.getValue("SOAP-ENC:type");
             
+            DBGLOG("-AV- stag:[%s]", stag.toString().c_str());
+
             if(strlen(qname) > strlen(localname))
             {
                 const char* semcol = strchr(qname, ':');
@@ -324,6 +326,7 @@ void CRpcMessage::unmarshall(XmlPullParser* xpp, CSoapValue* soapvalue, const ch
         else if(type == XmlPullParser::CONTENT) 
         {
             const char* value = xpp->readContent();
+            DBGLOG("-AV- content:[%s]", value);
             soapvalue->set_value(value);        
         }
     }

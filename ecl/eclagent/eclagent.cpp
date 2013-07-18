@@ -1553,6 +1553,7 @@ void EclAgent::getEventName(size32_t & outLen, char * & outStr)
 
 void EclAgent::getEventExtra(size32_t & outLen, char * & outStr, const char * tag)
 {
+    PrintStackReport();
     const char * text = "";
     if(workflow)
         text = workflow->queryEventExtra();

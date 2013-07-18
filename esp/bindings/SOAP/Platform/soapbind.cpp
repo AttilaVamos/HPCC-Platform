@@ -226,6 +226,8 @@ int CHttpSoapBinding::HandleSoapRequest(CHttpRequest* request, CHttpResponse* re
     response->setContentType(soapresponse->get_content_type());
     response->setContent(soapresponse->get_text());
     
+    DBGLOG("-AV- response:[%s]", soapresponse->get_text());
+
     DBGLOG("Sending SOAP Response(%u)", response->getContentLength());
     {
         EspTimeSection sendtime("send response [CHttpSoapBinding::HandleSoapRequest]");

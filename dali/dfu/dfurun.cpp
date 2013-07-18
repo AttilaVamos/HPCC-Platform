@@ -587,6 +587,8 @@ public:
         StringAttrArray done;
         monitor->getTriggeredList(prev);
         monitor->setCycleCount(monitor->getCycleCount()+1);
+        PROGLOG("MONITOR(%s): lfn.length:%d, name: %s",wu->queryId(),lfn.length(),lfn.str());
+        PrintStackReport();
         if (lfn.length()) {                                                 // no wild cards so only 0 or 1 prev
             if (queryDistributedFileDirectory().exists(lfn.str(),user)) {
                 done.append(*new StringAttrItem(lfn.str()));
