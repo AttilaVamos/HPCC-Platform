@@ -344,7 +344,9 @@ void EsdlServiceImpl::handleServiceRequest(IEspContext &context,
         Owned<IXmlWriterExt> respWriter = createIXmlWriterExt(0, 0, NULL, (flags & ESDL_BINDING_RESPONSE_JSON) ? WTJSON : WTStandard);
         m_pEsdlTransformer->processHPCCResult(context, mthdef, soapresp.str(), respWriter.get(), logdata, ESDL_TRANS_OUTPUT_ROOT, ns, schema_location);
 
-        out.append(respWriter->str());
+        const char * finalresp = respWriter->str();
+        handleResultLogging(context, tgtcfg.get(), req,  soapresp.str(), finalresp);
+        out.append(finalresp);
     }
     else if(isproxy)
         getSoapBody(out, soapresp);
@@ -357,15 +359,28 @@ void EsdlServiceImpl::handleServiceRequest(IEspContext &context,
 
 bool EsdlServiceImpl::handleResultLogging(IEspContext &espcontext, IPropertyTree * reqcontext, IPropertyTree * request,  const char * rawresp, const char * finalresp)
 {
-    bool success = true;
     if (loggingManager)
     {
+        StringBuffer requestContextXML;
+        toXML(reqcontext, requestContextXML, 0, 0);
+
+        StringBuffer requestXML;
+        toXML(request, requestXML, 0, 0);
+
+        StringBuffer espuser;
+        espcontext.getUserID(espuser);
+        StringBuffer sourceIP;
+        short port;
+        espcontext.getServAddress(sourceIP, port);
+
+        StringBuffer logrequest;
+        logrequest.setf("<LogContent><ESPContext><UserName>%s</UserName><SourceIP>%s</SourceIP></ESPContext><UserContext>%s</UserContext><UserRequest>%s</UserRequest><UserResponse>%s</UserResponse><BackEndResponse>%s</BackEndResponse></LogContent>", espuser.str(), sourceIP.str(), requestContextXML.str(),  requestXML.str(), finalresp,  "<TopBusinessSearchResponseEx><response><Header><Status>0</Status></Header><RecordCount>28</RecordCount> </response></TopBusinessSearchResponseEx>"/*soapresp.str()*/);
+
         StringBuffer logresp;
-        success = loggingManager->updateLog(LOGGINGDBSINGLEINSERT, espcontext, reqcontext, request, rawresp, finalresp, logresp);
-        ESPLOG(LogMin,"ESDLService: Attempted to log ESP transaction: %s", logresp.str());
+        loggingManager->updateLog(LOGGINGDBSINGLEINSERT, logrequest.str(), logresp);
     }
 
-    return success;
+    return true;
 }
 
 void EsdlServiceImpl::getSoapBody(StringBuffer& out,StringBuffer& soapresp)
