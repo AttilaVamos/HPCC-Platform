@@ -359,6 +359,17 @@ void EsdlServiceImpl::handleServiceRequest(IEspContext &context,
 
 bool EsdlServiceImpl::handleResultLogging(IEspContext &espcontext, IPropertyTree * reqcontext, IPropertyTree * request,  const char * rawresp, const char * finalresp)
 {
+<<<<<<< HEAD
+    bool success = true;
+    if (loggingManager)
+    {
+        StringBuffer logresp;
+        success = loggingManager->updateLog(LOGGINGDBSINGLEINSERT, espcontext, reqcontext, request, rawresp, finalresp, logresp);
+        ESPLOG(LogMin,"ESDLService: Attempted to log ESP transaction: %s", logresp.str());
+    }
+
+    return success;
+=======
     if (loggingManager)
     {
         StringBuffer requestContextXML;
@@ -381,6 +392,7 @@ bool EsdlServiceImpl::handleResultLogging(IEspContext &espcontext, IPropertyTree
     }
 
     return true;
+>>>>>>> HPCC-12702 First logging manager integration
 }
 
 void EsdlServiceImpl::getSoapBody(StringBuffer& out,StringBuffer& soapresp)
