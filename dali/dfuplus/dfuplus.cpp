@@ -295,6 +295,8 @@ bool CDfuPlusHelper::fixedSpray(const char* srcxml,const char* srcip,const char*
         req->setWrap(globals->getPropBool("wrap", false));
     if(globals->hasProp("compress"))
         req->setCompress(globals->getPropBool("compress", false));
+    if(globals->hasProp("preservecompression"))
+        req->setPreserveCompression(globals->getPropBool("preservecompression", false));
     if(globals->hasProp("encrypt"))
         req->setEncrypt(globals->queryProp("encrypt"));
     if(globals->hasProp("decrypt"))
@@ -413,6 +415,8 @@ bool CDfuPlusHelper::variableSpray(const char* srcxml,const char* srcip,const ch
     }
     if(globals->hasProp("compress"))
         req->setCompress(globals->getPropBool("compress", false));
+    if(globals->hasProp("preserveCompression"))
+        req->setPreserveCompression(globals->getPropBool("preserveCompression", false));
     if(globals->hasProp("encrypt"))
         req->setEncrypt(globals->queryProp("encrypt"));
     if(globals->hasProp("decrypt"))

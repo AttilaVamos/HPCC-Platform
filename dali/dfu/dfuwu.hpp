@@ -172,6 +172,8 @@ interface IConstDFUoptions : extends IInterface
     virtual bool getRecordStructurePresent() const = 0;
 
     virtual bool getQuotedTerminator() const = 0;
+
+    virtual bool getPreserveCompression() const = 0;
 };
 
 interface IDFUoptions : extends IConstDFUoptions
@@ -209,6 +211,7 @@ interface IDFUoptions : extends IConstDFUoptions
     virtual void setFailIfNoSourceFile(bool val=false) = 0;
     virtual void setRecordStructurePresent(bool val=false) = 0;
     virtual void setQuotedTerminator(bool val=true) = 0;
+    virtual void setPreserveCompression(bool val=false) = 0;
 };
 
 interface IConstDFUfileSpec: extends IInterface
@@ -248,6 +251,7 @@ interface IConstDFUfileSpec: extends IInterface
     virtual StringBuffer &getRawDirectory(StringBuffer &str) const = 0;
     virtual StringBuffer &getRawFileMask(StringBuffer &str) const = 0;
     virtual bool getRemoteGroupOverride() const = 0;
+    virtual bool getPreserveCompression() const = 0;
 };
 
 interface IDFUfileSpec: extends IConstDFUfileSpec
@@ -281,6 +285,7 @@ interface IDFUfileSpec: extends IConstDFUfileSpec
     virtual IPropertyTree *queryUpdatePartProperties(unsigned partidx) = 0;
     virtual void setRoxiePrefix(const char *val) = 0;   // extra prefix to add to file name
     virtual void setRemoteGroupOverride(bool set) = 0;
+    virtual void setPreserveCompression(bool val=false) = 0;
 };
 
 

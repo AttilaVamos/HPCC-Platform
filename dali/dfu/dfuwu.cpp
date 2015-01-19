@@ -1680,6 +1680,18 @@ public:
         queryRoot()->setPropBool("@remoteGroupOverride",set);
     }
 
+    bool getPreserveCompression() const
+    {
+        IPropertyTree *t = queryProperties();
+        return t->getPropBool("@preserveCompression", false);
+    }
+
+    void setPreserveCompression(bool val)
+    {
+        IPropertyTree *t = queryProperties();
+        t->setPropBool("@preserveCompression",val);
+    }
+
 };
 
 class CDFUoptions: public CLinkedDFUWUchild, implements IDFUoptions
@@ -2057,6 +2069,15 @@ public:
         queryRoot()->setPropBool("@quotedTerminator",val);
     }
 
+    bool getPreserveCompression() const
+    {
+        return queryRoot()->getPropBool("@preserveCompression");
+    }
+
+    void setPreserveCompression(bool val)
+    {
+        queryRoot()->setPropBool("@preserveCompression",val);
+    }
 };
 
 class CExceptionIterator: public CInterface, implements IExceptionIterator

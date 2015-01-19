@@ -67,6 +67,7 @@ void handleSyntax()
     out.append("        dstcluster=<cluster-name>\n");
     out.append("        format=fixed|csv|delimited|xml|variable|recfmv|recfmvb\n");
     out.append("        prefix=filename{:length},filesize{:[B|L][1-8]}\n");
+    out.append("        preservecompression=0|1 -- optional, default is 0 (don't preserve compression)\n");
     out.append("        options for fixed:\n");
     out.append("            recordsize=<record-size>\n");
     out.append("        options for csv/delimited:\n");

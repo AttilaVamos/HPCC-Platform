@@ -86,6 +86,8 @@ ESPStruct [nil_remove] DFUWorkunit
     [min_ver("1.09")] bool recordStructurePresent(false);
 
     [min_ver("1.10")] bool quotedTerminator(true);
+
+    [min_ver("1.11")] bool preserveCompression(false);
 };
 
 ESPStruct DFUException
@@ -312,6 +314,8 @@ ESPrequest [nil_remove] SprayFixed
     [min_ver("1.09")] bool recordStructurePresent(false);
 
     [min_ver("1.10")] bool quotedTerminator(true);
+
+    [min_ver("1.11")] bool preserveCompression(false);
 };
 
 ESPresponse [exceptions_inline] 
@@ -360,6 +364,8 @@ ESPrequest [nil_remove] SprayVariable
     [min_ver("1.09")] bool recordStructurePresent(false);
 
     [min_ver("1.10")] bool quotedTerminator(true);
+
+    [min_ver("1.11")] bool preserveCompression(false);
 };
 
 ESPresponse [exceptions_inline] 
@@ -611,7 +617,7 @@ ESPresponse [exceptions_inline] UploadFilesResponse
 };
 
 ESPservice [
-    version("1.10"), default_client_version("1.10"),
+    version("1.11"), default_client_version("1.11"),
     exceptions_inline("./smc_xslt/exceptions.xslt")] FileSpray
 {
     ESPuses ESPstruct DFUWorkunit;

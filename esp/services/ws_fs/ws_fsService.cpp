@@ -387,6 +387,8 @@ static void DeepAssign(IEspContext &context, IConstDFUWorkUnit *src, IEspDFUWork
                 dest.setSourceCsvEscape(escape.str());
             if(version >=1.10)
                 dest.setQuotedTerminator(quotedTerminator);
+            if(version >=1.11)
+                dest.setPreserveCompression(file->getPreserveCompression());
         }
     }
 
@@ -447,6 +449,7 @@ static void DeepAssign(IEspContext &context, IConstDFUWorkUnit *src, IEspDFUWork
             dest.setDestRecordSize(rs);
 
         dest.setCompress(file->isCompressed());
+        //dest.setpreserveCompression(file->getPreserveCompression());
     }
     // monitor stuff
     IConstDFUmonitor *monitor = src->queryMonitor();

@@ -44,7 +44,7 @@ class DALIFT_API FileFormat
 {
 public:
     FileFormat(FileFormatType _type = FFTunknown, unsigned _recordSize = 0)
-            { set(_type, _recordSize); maxRecordSize = 0; quotedTerminator = true;}
+            { set(_type, _recordSize); maxRecordSize = 0; quotedTerminator = true; preserveCompression = false;}
 
     void deserialize(MemoryBuffer & in);
     void deserializeExtra(MemoryBuffer & in, unsigned version);
@@ -59,6 +59,7 @@ public:
     void set(const FileFormat & src);
     bool hasQuote() const                           { return (quote == NULL) || (*quote != '\0'); }
     bool hasQuotedTerminator() const                { return quotedTerminator; }
+    bool hasPreserveCompression() const             { return preserveCompression; }
 
 public:
     FileFormatType      type;
@@ -72,6 +73,8 @@ public:
 
     //This value isn't serialized/deserialized.
     bool                quotedTerminator;
+
+    bool                preserveCompression;
 };
 UtfReader::UtfFormat getUtfFormatType(FileFormatType type);
 bool sameEncoding(const FileFormat & src, const FileFormat & tgt);

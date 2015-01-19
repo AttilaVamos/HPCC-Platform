@@ -432,6 +432,7 @@ void FileFormat::set(const FileFormat & src)
     escape.set(src.escape);
     rowTag.set(src.rowTag);
     quotedTerminator = src.quotedTerminator;
+    preserveCompression = src.preserveCompression;
 }
 
 

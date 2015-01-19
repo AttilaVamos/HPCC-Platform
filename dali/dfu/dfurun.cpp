@@ -1221,6 +1221,8 @@ public:
 
                         opttree->setPropBool("@quotedTerminator", options->getQuotedTerminator());
 
+                        opttree->setPropBool("@preserveCompression", options->getPreserveCompression());
+
                         Owned<IFileDescriptor> fdesc = destination->getFileDescriptor(iskey,options->getSuppressNonKeyRepeats()&&!iskey);
                         if (fdesc) {
                             if (options->getSubfileCopy()) {// need to set destination compressed or not
