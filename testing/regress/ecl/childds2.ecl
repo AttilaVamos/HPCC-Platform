@@ -24,7 +24,7 @@ mainRec := { unsigned seq, dataset(idRec) ids };
 
 idRec createId(unsigned id) := TRANSFORM
     SELF.id := id;
-END; 
+END;
 
 mainRec createMain(unsigned c, unsigned num) := TRANSFORM
     SELF.seq := c;

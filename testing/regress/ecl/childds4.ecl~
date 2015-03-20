@@ -20,7 +20,7 @@ mainRec := { unsigned seq, dataset(idRec) ids };
 
 idRec createId(unsigned id) := TRANSFORM
     SELF.id := id;
-END;
+END; 
 
 mainRec createMain(unsigned c, unsigned num) := TRANSFORM
     SELF.seq := c;
@@ -42,8 +42,10 @@ falseValue := false : stored('falseValue');
 evalFilter(mainRec l) := FUNCTION
 
     sortedIds := nofold(sort(l.ids, id));
-    cntGood := COUNT(sortedIds(assertTrue(id < 10, 'seq < 10')));
-    RETURN count(sortedIds(id != cntGood)) = 3;
+    cntBad := COUNT(sortedIds(assertTrue(id > 10, 'seq > 10')));
+    
+    f := IF(trueValue, sortedIds, NOFOLD(sortedIds(id != cntBad)));
+    RETURN COUNT(NOFOLD(f)) != 0;
 END;
 
 mainRec t(mainRec l) := TRANSFORM,SKIP(NOT evalFilter(l))

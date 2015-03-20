@@ -15,12 +15,16 @@
     limitations under the License.
 ############################################################################## */
 
+//This is needed to prevent cntBad being hoisted before the resourcing, and becoming unconditional
+//The tests are part of the work aiming to remove this code.
+#option ('workunitTemporaries', false);
+
 idRec := { unsigned id; };
 mainRec := { unsigned seq, dataset(idRec) ids };
 
 idRec createId(unsigned id) := TRANSFORM
     SELF.id := id;
-END;
+END; 
 
 mainRec createMain(unsigned c, unsigned num) := TRANSFORM
     SELF.seq := c;
@@ -39,17 +43,11 @@ ENDC++;
 trueValue := true : stored('trueValue');
 falseValue := false : stored('falseValue');
 
-evalFilter(mainRec l) := FUNCTION
+//Case 2 - a condition that is always false is used from a multiple branches that should never be executed
+cntBad := COUNT(ds(assertTrue(seq > 10, 'seq > 10'))) + NOFOLD(100000);
 
-    sortedIds := nofold(sort(l.ids, id));
-    cntGood := COUNT(sortedIds(assertTrue(id < 10, 'seq < 10')));
-    RETURN count(sortedIds(id != cntGood)) = 3;
-END;
+//Problem1: Converting this to a filtered disk read means that cntBad is evaluated always
+cond1 := IF(trueValue, ds, NOFOLD(ds)(seq != cntBad));
+cond2 := IF(falseValue, NOFOLD(ds)(seq != cntBad), ds);
+output(cond1+cond2);
 
-mainRec t(mainRec l) := TRANSFORM,SKIP(NOT evalFilter(l))
-    SELF := l;
-END;
-
-output(PROJECT(ds, t(LEFT)));
-
-output(ds(evalFilter(ds)));

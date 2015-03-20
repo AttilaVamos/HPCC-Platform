@@ -15,12 +15,21 @@
     limitations under the License.
 ############################################################################## */
 
+//fail
+//NOTE: This example shouldn't really fail, it illustates a problem converting
+//IF(c, ds, ds(f1)) to ds(c OR f1)
+//which causes dependencies of f1 to be evaluated when they wouldn't be otherwise.
+
+//This is needed to prevent cntBad being hoisted before the resourcing, and becoming unconditional
+//The tests are part of the work aiming to remove this code.
+#option ('workunitTemporaries', false);
+
 idRec := { unsigned id; };
 mainRec := { unsigned seq, dataset(idRec) ids };
 
 idRec createId(unsigned id) := TRANSFORM
     SELF.id := id;
-END;
+END; 
 
 mainRec createMain(unsigned c, unsigned num) := TRANSFORM
     SELF.seq := c;
@@ -39,17 +48,15 @@ ENDC++;
 trueValue := true : stored('trueValue');
 falseValue := false : stored('falseValue');
 
-evalFilter(mainRec l) := FUNCTION
+//Case 1 - a child query where the filter is always correct
+cnt := COUNT(ds(assertTrue(seq < 10, 'seq < 10'))) + NOFOLD(100000);
+output(ds(seq != cnt));
 
-    sortedIds := nofold(sort(l.ids, id));
-    cntGood := COUNT(sortedIds(assertTrue(id < 10, 'seq < 10')));
-    RETURN count(sortedIds(id != cntGood)) = 3;
-END;
 
-mainRec t(mainRec l) := TRANSFORM,SKIP(NOT evalFilter(l))
-    SELF := l;
-END;
+//Case 2 - a condition that is always false is used from a branch that should never be executed
+cntBad := COUNT(ds(assertTrue(seq > 10, 'seq > 10'))) + NOFOLD(100000);
 
-output(PROJECT(ds, t(LEFT)));
+//Problem1: Converting this to a filtered disk read means that cntBad is evaluated always
+cond := IF(trueValue, ds, ds(seq != cntBad));
+output(cond);
 
-output(ds(evalFilter(ds)));
