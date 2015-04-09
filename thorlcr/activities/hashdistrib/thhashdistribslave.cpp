@@ -631,8 +631,9 @@ protected:
             CriticalBlock b(activeWritersLock);
             if ((totalActiveWriters < owner.writerPoolSize) && (!owner.targetWriterLimit || (target->getActiveWriters() < owner.targetWriterLimit)))
             {
-                HDSendPrintLog3("CSender::add (new thread), dest=%d, active=%d", dest, totalActiveWriters);
-                writerPool->start(bucket);
+                HDSendPrintLog2("CSender::add disposing of bucket [finished(%d)]", dest);
+                decTotal(bucket->querySize());
+                bucket->Release();
             }
             else // an existing writer will pick up
                 target->enqueuePendingBucket(bucket);
