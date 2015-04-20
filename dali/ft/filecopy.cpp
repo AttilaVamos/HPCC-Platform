@@ -88,6 +88,8 @@
 #define FAcrc               "@fileCrc"
 #define FAsize              "@size"
 #define FAcompressedSize    "@compressedSize"
+#define FAheaderLength      "@headerLength"
+#define FAfooterLength      "@footerLength"
 
 
 const unsigned operatorUpdateFrequency = 5000;      // time between updates in ms
@@ -1054,7 +1056,7 @@ void FileSprayer::calculateMany2OnePartition()
         setCanAccessDirectly(curFilename);
         if (partSeparator)
         {
-            offset_t contentLength = cur.size - cur.xmlHeaderLength - cur.xmlFooterLength;
+            offset_t contentLength = (cur.size > cur.xmlHeaderLength + cur.xmlFooterLength ? cur.size - cur.xmlHeaderLength - cur.xmlFooterLength : 0);
             if (contentLength)
             {
                 if (lastContentLength)
@@ -1501,6 +1503,13 @@ void FileSprayer::analyseFileHeaders(bool setcurheadersize)
         {
             try
             {
+                if (distributedSource)
+                {
+                    Owned<IDistributedFilePart> curPart = distributedSource->getPart(idx);
+                    IPropertyTree& curProps = curPart->queryAttributes();
+                    cur.xmlHeaderLength = curProps.getPropInt(FAheaderLength, 0);
+                    cur.xmlFooterLength = curProps.getPropInt(FAfooterLength, 0);
+                }
                 if (srcFormat.headerLength == (unsigned)-1 || srcFormat.footerLength == (unsigned)-1)
                     locateContentHeader(io, cur.headerSize, cur.xmlHeaderLength, cur.xmlFooterLength);
                 else
@@ -1509,7 +1518,10 @@ void FileSprayer::analyseFileHeaders(bool setcurheadersize)
                     cur.xmlFooterLength = srcFormat.footerLength;
                 }
                 cur.headerSize += (unsigned)cur.xmlHeaderLength;
-                cur.size -= (cur.xmlHeaderLength + cur.xmlFooterLength);
+                if (cur.size >= cur.xmlHeaderLength + cur.xmlFooterLength)
+                    cur.size -= (cur.xmlHeaderLength + cur.xmlFooterLength);
+                else
+                    throwError3(DFTERR_InvalidXmlPartSize, cur.size, cur.xmlHeaderLength, cur.xmlFooterLength);
             }
             catch (IException * e)
             {
@@ -1557,12 +1569,36 @@ void FileSprayer::locateXmlHeader(IFileIO * io, unsigned headerSize, offset_t & 
 
     reader.set(in);
     reader.seek(headerSize);
-    xmlHeaderLength = splitter.getHeaderLength(reader);
+    if (xmlHeaderLength == 0)
+    {
+        try
+        {
+            xmlHeaderLength = splitter.getHeaderLength(reader);
+        }
+        catch (IException * e)
+        {
+            if (e->errorCode() != DFTERR_CannotFindFirstXmlRecord)
+                throw;
+            xmlHeaderLength = 0;
+        }
+    }
 
     offset_t size = io->size();
     offset_t endOffset = (size > srcFormat.maxRecordSize*2 + headerSize) ? size - srcFormat.maxRecordSize*2 : headerSize;
     reader.seek(endOffset);
-    xmlFooterLength = splitter.getFooterLength(reader, size);
+    if (xmlFooterLength == 0)
+    {
+        try
+        {
+            xmlFooterLength = splitter.getFooterLength(reader, size);
+        }
+        catch (IException * e)
+        {
+            if (e->errorCode() != DFTERR_CannotFindLastXmlRecord)
+                throw;
+            xmlFooterLength= 0;
+        }
+    }
 }
 
 void FileSprayer::locateJsonHeader(IFileIO * io, unsigned headerSize, offset_t & headerLength, offset_t & footerLength)
@@ -1945,7 +1981,7 @@ void FileSprayer::cloneHeaderFooter(unsigned idx, bool isHeader)
     if (isHeader)
         next.inputOffset = curSrc.headerSize - curSrc.xmlHeaderLength;
     else
-        next.inputOffset = curSrc.headerSize + curSrc.size;
+        next.inputOffset = curSrc.size + curSrc.xmlHeaderLength;
     next.inputLength = isHeader ? curSrc.xmlHeaderLength : curSrc.xmlFooterLength;
     next.outputLength = needToCalcOutput() ? next.inputLength : 0;
     next.whichInput = cur.whichInput;
@@ -2849,6 +2885,7 @@ void FileSprayer::updateTargetProperties()
         CRC32Merger totalCRC;
         offset_t totalLength = 0;
         offset_t totalCompressedSize = 0;
+        unsigned whichHeaderInput = 0;
         ForEachItemIn(idx, partition)
         {
             PartitionPoint & cur = partition.item(idx);
@@ -2873,6 +2910,16 @@ void FileSprayer::updateTargetProperties()
                 // TODO: Create DistributedFilePropertyLock for parts
                 curPart->lockProperties();
                 IPropertyTree& curProps = curPart->queryAttributes();
+
+                FilePartInfo & curHeaderSource = sources.item(whichHeaderInput);
+                curProps.setPropInt(FAheaderLength, curHeaderSource.xmlHeaderLength);
+
+                FilePartInfo & curFooterSource = sources.item(cur.whichInput);
+                curProps.setPropInt(FAfooterLength, curFooterSource.xmlFooterLength);
+
+                if( idx+1 != partition.ordinality() && partition.item(idx+1).whichOutput != cur.whichOutput )
+                    whichHeaderInput = partition.item(idx+1).whichInput;
+
                 if (calcCRC())
                 {
                     curProps.setPropInt(FAcrc, partCRC.get());

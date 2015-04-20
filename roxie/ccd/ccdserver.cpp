@@ -11217,14 +11217,13 @@ public:
         StringBuffer header;
         OwnedRoxieString suppliedHeader(xmlHelper.getHeader());
         if (kind==TAKjsonwrite)
-        {
             buildJsonHeader(header, suppliedHeader, rowTag);
-            headerLength = header.length();
-        }
         else if (suppliedHeader)
             header.set(suppliedHeader);
         else
             header.set("<Dataset>\n");
+
+        headerLength = header.length();
         diskout->write(header.length(), header.str());
 
         Owned<IXmlWriterExt> writer = createIXmlWriterExt(xmlHelper.getXmlFlags(), 0, NULL, (kind==TAKjsonwrite) ? WTJSON : WTStandard);
@@ -11249,15 +11248,13 @@ public:
         OwnedRoxieString suppliedFooter(xmlHelper.getFooter());
         StringBuffer footer;
         if (kind==TAKjsonwrite)
-        {
             buildJsonFooter(footer.newline(), suppliedFooter, rowTag);
-            footerLength=footer.length();
-        }
         else if (suppliedFooter)
             footer.append(suppliedFooter);
         else
             footer.append("</Dataset>");
 
+        footerLength=footer.length();
         diskout->write(footer.length(), footer);
     }
 
@@ -11273,10 +11270,25 @@ public:
         desc->queryProperties().setProp("@format","utf8n");
         desc->queryProperties().setProp("@rowTag",rowTag.get());
         desc->queryProperties().setProp("@kind", (kind==TAKjsonwrite) ? "json" : "xml");
-        if (headerLength)
-            desc->queryProperties().setPropInt("@headerLength", headerLength);
-        if (footerLength)
-            desc->queryProperties().setPropInt("@footerLength", footerLength);
+        if (kind==TAKjsonwrite)
+        {
+            if (headerLength)
+                desc->queryProperties().setPropInt("@headerLength", headerLength);
+            if (footerLength)
+                desc->queryProperties().setPropInt("@footerLength", footerLength);
+        }
+        else
+        {
+            IPartDescriptorIterator *parts = desc->getIterator();
+            if (parts->first())
+            {
+                do {
+                    IPartDescriptor &part = parts->query();
+                    part.queryProperties().setPropInt("@headerLength", headerLength);
+                    part.queryProperties().setPropInt("@footerLength", footerLength);
+                } while (parts->next());
+            }
+        }
     }
 
     virtual bool isOutputTransformed() const { return true; }

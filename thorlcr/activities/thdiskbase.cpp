@@ -225,6 +225,7 @@ void CWriteMasterBase::publish()
             props.setPropInt64("@totalCRC", totalCRC);
         }
     }
+
     container.queryTempHandler()->registerFile(fileName, container.queryOwner().queryGraphId(), diskHelperBase->getTempUsageCount(), TDXtemporary & diskHelperBase->getFlags(), getDiskOutputKind(diskHelperBase->getFlags()), &clusters);
     if (!dlfn.isExternal())
         queryThorFileManager().publish(container.queryJob(), fileName, *fileDesc, NULL, targetOffset);

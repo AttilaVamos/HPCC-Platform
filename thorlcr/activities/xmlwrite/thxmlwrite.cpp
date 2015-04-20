@@ -45,7 +45,7 @@ public:
         StringBuffer rowTag;
         OwnedRoxieString xmlpath(helper->getXmlIteratorPath());
         if (!xmlpath)
-            rowTag.append("Row");
+            rowTag.append(DEFAULTXMLROWTAG);
         else
         {
             const char *path = xmlpath;
@@ -65,6 +65,28 @@ public:
 
             supplied.set(helper->getFooter());
             props.setPropInt("@footerLength", buildJsonFooter(s.clear(), supplied, rowTag).length());
+        }
+        else
+        {
+            StringBuffer supplied(helper->getHeader());
+            size32_t headerLength = supplied.length();
+            if (headerLength == 0 )
+                headerLength = supplied.set(DEFAULTXMLHEADER).newline().length();
+
+            supplied.set(helper->getFooter());
+            size32_t footerLength = supplied.length();
+            if (footerLength == 0 )
+                footerLength = supplied.set(DEFAULTXMLFOOTER).newline().length();
+
+            IPartDescriptorIterator *parts = fileDesc->getIterator();
+            if (parts->first())
+            {
+                do {
+                    IPartDescriptor &part = parts->query();
+                    part.queryProperties().setPropInt("@headerLength", headerLength);
+                    part.queryProperties().setPropInt("@footerLength", footerLength);
+                } while (parts->next());
+            }
         }
     }
 };

@@ -40,6 +40,10 @@
 
 #define PAUSETMPSCOPE "thorpause"
 
+#define DEFAULTXMLROWTAG "Row"
+#define DEFAULTXMLHEADER "<Dataset>"
+#define DEFAULTXMLFOOTER "</Dataset>"
+
 class CJobBase;
 interface IDistributedFile;
 interface IThorFileManager : extends IInterface

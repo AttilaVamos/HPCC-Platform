@@ -899,15 +899,14 @@ void CHThorXmlWriteActivity::execute()
     StringBuffer header;
     OwnedRoxieString suppliedHeader(helper.getHeader());
     if (kind==TAKjsonwrite)
-    {
         buildJsonHeader(header, suppliedHeader, rowTag);
-        headerLength = header.length();
-    }
     else if (suppliedHeader)
         header.set(suppliedHeader);
     else
         header.set("<Dataset>\n");
-    diskout->write(header.length(), header.str());
+
+    headerLength = header.length();
+    diskout->write(headerLength, header.str());
 
     Owned<IXmlWriterExt> writer = createIXmlWriterExt(helper.getXmlFlags(), 0, NULL, (kind==TAKjsonwrite) ? WTJSON : WTStandard);
     writer->outputBeginArray(rowTag); //need to set up the array
@@ -941,16 +940,14 @@ void CHThorXmlWriteActivity::execute()
     OwnedRoxieString suppliedFooter(helper.getFooter());
     StringBuffer footer;
     if (kind==TAKjsonwrite)
-    {
         buildJsonFooter(footer.newline(), suppliedFooter, rowTag);
-        footerLength=footer.length();
-    }
     else if (suppliedFooter)
         footer.append(suppliedFooter);
     else
         footer.append("</Dataset>");
 
-    diskout->write(footer.length(), footer);
+    footerLength=footer.length();
+    diskout->write(footerLength, footer);
 }
 
 void CHThorXmlWriteActivity::setFormat(IFileDescriptor * desc)
@@ -958,11 +955,20 @@ void CHThorXmlWriteActivity::setFormat(IFileDescriptor * desc)
     desc->queryProperties().setProp("@format","utf8n");
     desc->queryProperties().setProp("@rowTag",rowTag.str());
     desc->queryProperties().setProp("@kind", (kind==TAKjsonwrite) ? "json" : "xml");
-    if (headerLength)
-        desc->queryProperties().setPropInt("@headerLength", headerLength);
-    if (footerLength)
-        desc->queryProperties().setPropInt("@footerLength", footerLength);
+    if (kind==TAKjsonwrite)
+    {
+        if (headerLength)
+            desc->queryProperties().setPropInt("@headerLength", headerLength);
 
+        if (footerLength)
+            desc->queryProperties().setPropInt("@footerLength", footerLength);
+    }
+    else
+    {
+        desc->queryPart(0)->queryProperties().setPropInt("@headerLength", headerLength);
+        desc->queryPart(0)->queryProperties().setPropInt("@footerLength", footerLength);
+
+    }
     const char *recordECL = helper.queryRecordECL();
     if (recordECL && *recordECL)
         desc->queryProperties().setProp("ECL", recordECL);
