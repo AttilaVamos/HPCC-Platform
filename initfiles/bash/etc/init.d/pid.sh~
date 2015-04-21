@@ -157,19 +157,9 @@ check_status() {
             echo "Sentinel not yet located, process currently unhealthy"
           fi
           return 2
->>>>>>> HPCC-13310 The checkPid call is unneccessary as it is replicated within the checkPidExists function
         fi
         return 0
     # check if shutdown and healthy
-<<<<<<< HEAD
-    elif [[ $componentLocked -eq 0 ]] && [[ $initRunning -eq 0 ]] && [[ $compRunning -eq 0 ]]; then
-        if [[ ${SENTINELFILECHK} -eq 1 ]]; then
-            if [[ ${sentinelFlag} -eq 1 ]]; then
-                [[ ${DEBUG} != "NO_DEBUG" ]] && echo "Sentinel is up but orphaned"
-                return 3
-            fi
-            [[ ${DEBUG} != "NO_DEBUG" ]] && echo "Sentinel is now down"
-=======
     elif [ $componentLocked -eq 0 ] && [ $initRunning -eq 0 ] && [ $compRunning -eq 0 ]; then
       if [ ${SENTINELFILECHK} -eq 1 ]; then
         if [ ${sentinelFlag} -eq 1 ]; then

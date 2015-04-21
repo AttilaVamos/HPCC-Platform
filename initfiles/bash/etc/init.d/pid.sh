@@ -132,16 +132,6 @@ check_status() {
     local sentinelFlag=$?
 
     # check if running and healthy
-<<<<<<< HEAD
-    if [[ $componentLocked -eq 1 ]] && [[ $initRunning -eq 1 ]] && [[ $compRunning -eq 1 ]]; then
-        [[ ${DEBUG} != "NO_DEBUG" ]] && echo "everything is up except sentinel"
-        if [[ ${SENTINELFILECHK} -eq 1 ]]; then
-            if [[ ${sentinelFlag} -eq 0 ]]; then
-                [[ ${DEBUG} != "NO_DEBUG" ]] && echo "Sentinel not yet located, process currently unhealthy"
-                return 2 
-            fi
-            [[ ${DEBUG} != "NO_DEBUG" ]] && echo "Sentinel is now up"
-=======
     if [ $componentLocked -eq 1 ] && [ $initRunning -eq 1 ] && [ $compRunning -eq 1 ]; then
       if [ ${DEBUG} != "NO_DEBUG" ]; then
         echo "everything is up except sentinel"
@@ -172,35 +162,20 @@ check_status() {
             echo "Sentinel is now down"
           fi
           return 1
->>>>>>> HPCC-13310 The checkPid call is unneccessary as it is replicated within the checkPidExists function
         fi
         return 1
     else
-<<<<<<< HEAD
-        if [[ "${DEBUG}" != "NO_DEBUG" ]]; then
-            [[ $componentLocked -eq 0 ]] && log_failure_msg "component is not locked: $2"
-            [[ $initRunning -eq 0 ]]     && log_failure_msg "process for ${compName}_init.pid is not running"
-            [[ $compRunning -eq 0 ]]     && log_failure_msg "process for ${compName}.pid is not running"
-        fi
-        return 4
-=======
       if [ "${DEBUG}" != "NO_DEBUG" ]; then
         [ $componentLocked -eq 0 ]       && log_failure_msg "component is not locked: $2"
         [ $initRunning -eq 0 ]           && log_failure_msg "process for ${compName}_init.pid is not running"
         [ $compRunning -eq 0 ]           && log_failure_msg "process for ${compName}.pid is not running"
       fi
       return 4
->>>>>>> HPCC-13310 The checkPid call is unneccessary as it is replicated within the checkPidExists function
     fi
 }
 
 checkSentinelFile() {
     FILEPATH="${runtime}/${compName}"
-<<<<<<< HEAD
-    if [[ -d ${FILEPATH} ]]; then
-       fileCheckOP=$(find ${FILEPATH} -name "*senti*")
-       [[ ! -z "${fileCheckOP}" ]] && return 1
-=======
     if [ -d ${FILEPATH} ];then
        fileCheckOP=`find ${FILEPATH} -name "*senti*"`
        if [ ! -z "${fileCheckOP}" ]; then
