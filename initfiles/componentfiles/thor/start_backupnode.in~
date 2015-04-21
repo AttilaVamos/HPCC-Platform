@@ -71,7 +71,11 @@ if [ ! -z ${THORPRIMARY} ]; then
 else
     groupName=${THORNAME}
 fi
+<<<<<<< HEAD
+daliadmin server=$DALISERVER dfsgroup ${groupName} $INSTANCE_DIR/backupnode.slaves
+=======
 daliadmin $DALISERVER dfsgroup ${groupName} $INSTANCE_DIR/backupnode.slaves
+>>>>>>> HPCC-13440 Backupnode could corrupt slaves file and hit problems
 errcode=$?
 if [ 0 != ${errcode} ]; then
     echo 'failed to lookup dali group for $groupName'
