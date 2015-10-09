@@ -223,11 +223,11 @@ def checkHpccStatus():
             if "Error connecting" in line:
                 if isLocal:
                     err = Error("6001")
-                    logging.error("%s. %s:'%s local %s target!'" % (1,  err,  line,  target))
+                    logging.error("%s. %s:'%s local target!'" % (1,  err,  line))
                     raise (err)
                 else:
                     err = Error("6004")
-                    logging.error("%s. %s:'%s remote %s target!'" % (1,  err,  line,  target))
+                    logging.error("%s. %s:'%s remote target!'" % (1,  err,  line))
                     raise (err)
                 break
 
