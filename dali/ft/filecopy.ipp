@@ -268,6 +268,8 @@ protected:
     
 private:
     bool calcUsePull();
+    void roundRobinSpray();
+    void standardSpray();
 
 protected:
     CIArrayOf<FilePartInfo> sources;
@@ -323,6 +325,7 @@ protected:
     offset_t                headerSize;
     offset_t                footerSize;
     int                     fileUmask;
+    bool                    useRoundRobin = false;
 };
 
 

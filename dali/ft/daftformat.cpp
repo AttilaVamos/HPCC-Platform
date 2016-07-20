@@ -2248,6 +2248,8 @@ IOutputProcessor * createOutputProcessor(const FileFormat & format)
         return new CBlockedOutputProcessor();
     case FFTvariable:
         return new CVariableOutputProcessor(false);
+    case FFTcsv:
+        return new CSimpleOutputProcessor();
     case FFTvariablebigendian:
         return new CVariableOutputProcessor(true);
     case FFTutf8: case FFTutf8n: case FFTutf16: case FFTutf16be: case FFTutf16le: case FFTutf32: case FFTutf32be: case FFTutf32le:

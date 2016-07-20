@@ -2867,30 +2867,67 @@ bool FileSprayer::disallowImplicitReplicate()
           
 }
 
-void FileSprayer::spray()
+void FileSprayer::roundRobinSpray()
 {
-    if (!allowSplit() && querySplitPrefix())
-        throwError(DFTERR_SplitNoSplitClash);
+    LOG(MCdebugProgressDetail, job, "roundRobinSpray()");
 
-    aindex_t sourceSize = sources.ordinality();
-    bool failIfNoSourceFile = options->getPropBool("@failIfNoSourceFile");
+    bool calcOutput = needToCalcOutput();
+    FormatPartitionerArray partitioners;
 
-    if ((sourceSize == 0) && failIfNoSourceFile)
-        throwError(DFTERR_NoFilesMatchWildcard);
-
-    LOG(MCdebugInfo, job, "compressedInput:%d, compressOutput:%d", compressedInput, compressOutput);
-
-    LocalAbortHandler localHandler(daftAbortHandler);
-
-    if (allowRecovery && progressTree->getPropBool(ANcomplete))
+    unsigned numParts = targets.ordinality();
+    StringBuffer remoteFilename;
+    StringBuffer slaveName;
+    ForEachItemIn(idx, sources)
     {
-        LOG(MCdebugInfo, job, "Command completed successfully in previous invocation");
-        return;
+        FilePartInfo & cur = sources.item(idx);
+        cur.filename.getRemotePath(remoteFilename.clear());
+
+        srcFormat.quotedTerminator = options->getPropBool("@quotedTerminator", true);
+        LOG(MCdebugInfoDetail, job, "Partition %d(%s)", idx, remoteFilename.str());
+        const SocketEndpoint & ep = cur.filename.queryEndpoint();
+        IFormatPartitioner * partitioner = createFormatPartitioner(ep, srcFormat, tgtFormat, calcOutput, queryFixedSlave(), wuid);
+
+        // CSV record structure discovery of every source
+        bool isRecordStructurePresent = options->getPropBool("@recordStructurePresent", false);
+        partitioner->setRecordStructurePresent(isRecordStructurePresent);
+
+        RemoteFilename name;
+        name.set(cur.filename);
+        setCanAccessDirectly(name);
+        partitioner->setPartitionRange(totalSize, cur.offset, cur.size, cur.headerSize, numParts);
+        partitioner->setSource(idx, name, compressedInput, decryptKey);
+        partitioners.append(*partitioner);
+
+        IOutputProcessor * processor = createOutputProcessor(tgtFormat);
+        partitioner->setTarget(processor);
+
+        offset_t partOffsets[numParts];
+        IArrayOf<IFileIOStream> partStreams;
+
+        ForEachItemIn(idx2, targets)
+        {
+            TargetLocation & target = targets.item(idx2);
+            StringBuffer targetFilename;
+            target.filename.getPath(targetFilename);
+            LOG(MCdebugProgressDetail, job, "Spray '%s' to '%s'", remoteFilename.str(), targetFilename.str());
+
+            OwnedIFileIO iFileIO;
+            IFile *file = createIFile(targetFilename.str());
+            iFileIO.setown(file->open(IFOwrite));
+            IFileIOStream  * partStream = createIOStream(iFileIO);
+            partStreams.add(*partStream, idx2);
+
+            partOffsets[idx2] = 0;
+            processor->setOutput(partOffsets[idx2], partStream);
+
+        }
+
     }
 
-    checkFormats();
-    checkForOverlap();
+}
 
+void FileSprayer::standardSpray()
+{
     progressTree->setPropBool(ANpull, usePullOperation());
 
     const char * splitPrefix = querySplitPrefix();
@@ -2961,6 +2998,38 @@ void FileSprayer::spray()
     else
         pushParts();
     afterTransfer();
+}
+
+void FileSprayer::spray()
+{
+    if (!allowSplit() && querySplitPrefix())
+        throwError(DFTERR_SplitNoSplitClash);
+
+    aindex_t sourceSize = sources.ordinality();
+    bool failIfNoSourceFile = options->getPropBool("@failIfNoSourceFile");
+
+    if ((sourceSize == 0) && failIfNoSourceFile)
+        throwError(DFTERR_NoFilesMatchWildcard);
+
+    LOG(MCdebugInfo, job, "compressedInput:%d, compressOutput:%d", compressedInput, compressOutput);
+
+    LocalAbortHandler localHandler(daftAbortHandler);
+
+    if (allowRecovery && progressTree->getPropBool(ANcomplete))
+    {
+        LOG(MCdebugInfo, job, "Command completed successfully in previous invocation");
+        return;
+    }
+
+    checkFormats();
+    checkForOverlap();
+
+    useRoundRobin = true;
+    LOG(MCdebugInfo, job, "use round-robin method: %s", (useRoundRobin ? "yes": "no"));
+    if (useRoundRobin)
+        roundRobinSpray();
+    else
+        standardSpray();
 
     //If got here then we have succeeded
     updateTargetProperties();
