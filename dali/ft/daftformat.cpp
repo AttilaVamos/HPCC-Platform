@@ -970,7 +970,15 @@ void CCsvPartitioner::setTarget(IOutputProcessor * _target)
     CInputBasePartitioner::setTarget(hook);
 }
 
+void CCsvPartitioner::roundRobinProcess()
+{
 
+}
+
+void CCsvPartitioner::addTargetFilePartStream(aindex_t idx, IFileIOStream  * partStream)
+{
+
+}
 
 // A quick version of the csv partitioner that jumps to the split offset, and then searches for a terminator.
 
@@ -2315,6 +2323,8 @@ IOutputProcessor * createOutputProcessor(const FileFormat & format)
         return new CBlockedOutputProcessor();
     case FFTvariable:
         return new CVariableOutputProcessor(false);
+    case FFTcsv:
+        return new CSimpleOutputProcessor();
     case FFTvariablebigendian:
         return new CVariableOutputProcessor(true);
     case FFTutf8: case FFTutf8n: case FFTutf16: case FFTutf16be: case FFTutf16le: case FFTutf32: case FFTutf32be: case FFTutf32le:

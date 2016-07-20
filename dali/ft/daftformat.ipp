@@ -40,6 +40,7 @@ public:
     virtual void setTarget(IOutputProcessor * _target);
     virtual void setRecordStructurePresent(bool _recordStructurePresent);
     virtual void getRecordStructure(StringBuffer & _recordStructure);
+    virtual void enableRoundRobin() { UNIMPLEMENTED; };
 
 protected:
     virtual void findSplitPoint(offset_t curOffset, PartitionCursor & cursor) = 0;
@@ -241,6 +242,7 @@ public:
 
     virtual void getRecordStructure(StringBuffer & _recordStructure);
     virtual void setRecordStructurePresent( bool _isRecordStructurePresent) {isRecordStructurePresent = _isRecordStructurePresent;}
+    virtual void enableRoundRobin() {isRoundRobin = true;};
 
 protected:
     virtual size32_t getSplitRecordSize(const byte * record, unsigned maxToRead, bool processFullBuffer, bool ateof);
@@ -252,6 +254,8 @@ protected:
 
 private:
     void storeFieldName(const char * start, unsigned len);
+    void roundRobinProcess();
+    void addTargetFilePartStream(aindex_t idx, IFileIOStream  * partStream);
     
 protected:
     enum { NONE=0, SEPARATOR=1, TERMINATOR=2, WHITESPACE=3, QUOTE=4, ESCAPE=5 };
@@ -264,6 +268,10 @@ protected:
     unsigned        fieldCount;
     Owned<KeptAtomTable> fields;
     bool            isFirstRow;
+    //offset_t partOffsets[numParts];
+    IArrayOf<IFileIOStream> partStreams;
+    IArrayOf<offset_t> partOffsets;
+    bool            isRoundRobin = false;
 };
 
 
@@ -291,6 +299,7 @@ public:
 
     virtual void getRecordStructure(StringBuffer & _recordStructure) { _recordStructure = recordStructure; }
     virtual void setRecordStructurePresent( bool _isRecordStructurePresent) {isRecordStructurePresent = _isRecordStructurePresent;}
+    virtual void enableRoundRobin() { UNIMPLEMENTED; };
 
 protected:
     virtual size32_t getSplitRecordSize(const byte * record, unsigned maxToRead, bool processFullBuffer, bool ateof);
@@ -667,6 +676,7 @@ public:
     virtual void setTarget(IOutputProcessor * _target) { UNIMPLEMENTED; }
     virtual void setRecordStructurePresent(bool _recordStructurePresent);
     virtual void getRecordStructure(StringBuffer & _recordStructure);
+    virtual void enableRoundRobin() { UNIMPLEMENTED; };
 
 protected:
     void callRemote();

@@ -2866,30 +2866,52 @@ bool FileSprayer::disallowImplicitReplicate()
 
 }
 
-void FileSprayer::spray()
+void FileSprayer::roundRobinSpray()
 {
-    if (!allowSplit() && querySplitPrefix())
-        throwError(DFTERR_SplitNoSplitClash);
+    LOG(MCdebugProgressDetail, job, "roundRobinSpray()");
 
-    aindex_t sourceSize = sources.ordinality();
-    bool failIfNoSourceFile = options->getPropBool("@failIfNoSourceFile");
+    bool calcOutput = needToCalcOutput();
+    FormatPartitionerArray partitioners;
 
-    if ((sourceSize == 0) && failIfNoSourceFile)
-        throwError(DFTERR_NoFilesMatchWildcard);
-
-    LOG(MCdebugInfo, job, "compressedInput:%d, compressOutput:%d", compressedInput, compressOutput);
-
-    LocalAbortHandler localHandler(daftAbortHandler);
-
-    if (allowRecovery && progressTree->getPropBool(ANcomplete))
+    unsigned numParts = targets.ordinality();
+    StringBuffer remoteFilename;
+    StringBuffer slaveName;
+    ForEachItemIn(idx, sources)
     {
-        LOG(MCdebugInfo, job, "Command completed successfully in previous invocation");
-        return;
+        IFormatPartitioner * partitioner = createPartitioner(idx, calcOutput, numParts);
+        partitioners.append(*partitioner);
+
+        IOutputProcessor * processor = createOutputProcessor(tgtFormat);
+        partitioner->setTarget(processor);
+
+        offset_t partOffsets[numParts];
+        IArrayOf<IFileIOStream> partStreams;
+
+        ForEachItemIn(idx2, targets)
+        {
+            TargetLocation & target = targets.item(idx2);
+            StringBuffer targetFilename;
+            target.filename.getPath(targetFilename);
+            LOG(MCdebugProgressDetail, job, "Spray '%s' to '%s'", remoteFilename.str(), targetFilename.str());
+
+            OwnedIFileIO iFileIO;
+            IFile *file = createIFile(targetFilename.str());
+            iFileIO.setown(file->open(IFOwrite));
+            IFileIOStream  * partStream = createIOStream(iFileIO);
+            partStreams.add(*partStream, idx2);
+
+            partOffsets[idx2] = 0;
+            //processor->setOutput(partOffsets[idx2], partStream);
+            //partitioner->
+
+        }
+
     }
 
-    checkFormats();
-    checkForOverlap();
+}
 
+void FileSprayer::standardSpray()
+{
     progressTree->setPropBool(ANpull, usePullOperation());
 
     const char * splitPrefix = querySplitPrefix();
@@ -2960,6 +2982,38 @@ void FileSprayer::spray()
     else
         pushParts();
     afterTransfer();
+}
+
+void FileSprayer::spray()
+{
+    if (!allowSplit() && querySplitPrefix())
+        throwError(DFTERR_SplitNoSplitClash);
+
+    aindex_t sourceSize = sources.ordinality();
+    bool failIfNoSourceFile = options->getPropBool("@failIfNoSourceFile");
+
+    if ((sourceSize == 0) && failIfNoSourceFile)
+        throwError(DFTERR_NoFilesMatchWildcard);
+
+    LOG(MCdebugInfo, job, "compressedInput:%d, compressOutput:%d", compressedInput, compressOutput);
+
+    LocalAbortHandler localHandler(daftAbortHandler);
+
+    if (allowRecovery && progressTree->getPropBool(ANcomplete))
+    {
+        LOG(MCdebugInfo, job, "Command completed successfully in previous invocation");
+        return;
+    }
+
+    checkFormats();
+    checkForOverlap();
+
+    useRoundRobin = true;
+    LOG(MCdebugInfo, job, "use round-robin method: %s", (useRoundRobin ? "yes": "no"));
+    if (useRoundRobin && (targets.ordinality() > 1) && srcFormat.isCsv())
+        roundRobinSpray();
+    else
+        standardSpray();
 
     //If got here then we have succeeded
     updateTargetProperties();

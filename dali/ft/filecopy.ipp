@@ -276,6 +276,8 @@ private:
     bool calcUsePull();
     // Get and store Remote File Name parts into the History record
     void splitAndStoreFileInfo(IPropertyTree * newRecord, RemoteFilename &remoteFileName, aindex_t idx = 0, bool isDistributedSource = true);
+    void roundRobinSpray();
+    void standardSpray();
 
 protected:
     CIArrayOf<FilePartInfo> sources;
@@ -333,6 +335,7 @@ protected:
     int                     fileUmask;
     Owned<IPropertyTree>    srcHistory;
     dfu_operation           operation = dfu_unknown;
+    bool                    useRoundRobin = false;
 };
 
 
