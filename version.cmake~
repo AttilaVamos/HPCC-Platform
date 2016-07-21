@@ -1,0 +1,17 @@
+###
+## Version Information
+###
+set ( HPCC_PROJECT "community" )
+<<<<<<< HEAD
+set ( HPCC_MAJOR 6 )
+set ( HPCC_MINOR 1 )
+set ( HPCC_POINT 0 )
+set ( HPCC_MATURITY "trunk" )
+=======
+set ( HPCC_MAJOR 5 )
+set ( HPCC_MINOR 6 )
+set ( HPCC_POINT 5 )
+set ( HPCC_MATURITY "closedown" )
+>>>>>>> Split off 5.6.6 branch
+set ( HPCC_SEQUENCE 0 )
+###
