@@ -3288,3 +3288,33 @@ ILockInfoCollection *deserializeLockInfoCollection(MemoryBuffer &mb)
     return new CLockInfoCollection(mb);
 }
 
+//
+// -----------------------------------------------------------------------------------
+// Unit test
+//
+//#define _USE_CPPUNIT 1
+
+#ifdef _USE_CPPUNIT
+#include <cppunit/extensions/HelperMacros.h>
+
+
+class ExternalFileTest : public CppUnit::TestFixture
+{
+    CPPUNIT_TEST_SUITE( ExternalFileTest );
+        CPPUNIT_TEST(externalFileCheck);
+    CPPUNIT_TEST_SUITE_END();
+
+    void externalFileCheck()
+    {
+        StringBuffer r("~file::aaa::bbb::ccc");
+        CPPUNIT_ASSERT(false == isExternalFile(r.str()));
+        r.set("~file::127.0.0.1::aaa::bbb::ccc");
+        CPPUNIT_ASSERT(true == isExternalFile(r.str()));
+    }
+};
+
+CPPUNIT_TEST_SUITE_REGISTRATION( ExternalFileTest );
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( ExternalFileTest, "ExternalFileTest");
+
+
+#endif // _USE_CPPUNIT
