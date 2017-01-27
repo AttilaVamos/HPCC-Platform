@@ -2704,8 +2704,8 @@ void FileSprayer::checkFilePath(RemoteFilename & filename)
             Owned<IConstDropZoneInfo> dropZone = env->getDropZoneByAddressPath(netaddress.str(), pfilePath);
             if (!dropZone)
             {
-                LOG(MCdebugInfo, unknownJob, "No matching drop zone path to file path: '%s'", pfilePath);
-                // throwError1(DFTERR_NoMatchingDropzonePath, pfilePath);
+                LOG(MCdebugInfo, unknownJob, "No matching drop zone path to file on IP:'%s' and path: '%s'", netaddress.str(), pfilePath);
+                throwError2(DFTERR_NoMatchingDropzonePath, netaddress.str(), pfilePath);
             }
             else
             {
