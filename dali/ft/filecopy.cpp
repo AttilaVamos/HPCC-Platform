@@ -2869,23 +2869,37 @@ bool FileSprayer::disallowImplicitReplicate()
 void FileSprayer::roundRobinSpray()
 {
     LOG(MCdebugProgressDetail, job, "roundRobinSpray()");
+    if (sources.ordinality() > 1)
+    {
+        LOG(MCdebugInfoDetail, unknownJob, "Actually only single input file is handled.");
+        return;
+    }
 
     bool calcOutput = needToCalcOutput();
     FormatPartitionerArray partitioners;
 
+    gatherFileSizes(true);
+    //if (!replicate||pretendreplicate)
+    //    analyseFileHeaders(!pretendreplicate); // if pretending replicate don't want to remove headers
+    afterGatherFileSizes();
+
     unsigned numParts = targets.ordinality();
     StringBuffer remoteFilename;
     StringBuffer slaveName;
+    off64_t targetSize = 0;
+    off64_t targetRecordCount = 0;
+
     ForEachItemIn(idx, sources)
     {
+        FilePartInfo & cur = sources.item(idx);
+        cur.filename.getRemotePath(remoteFilename.clear());
+
         IFormatPartitioner * partitioner = createPartitioner(idx, calcOutput, numParts);
         partitioners.append(*partitioner);
+        partitioner->setSourceSize(totalSize);
 
         IOutputProcessor * processor = createOutputProcessor(tgtFormat);
         partitioner->setTarget(processor);
-
-        offset_t partOffsets[numParts];
-        IArrayOf<IFileIOStream> partStreams;
 
         ForEachItemIn(idx2, targets)
         {
@@ -2894,16 +2908,91 @@ void FileSprayer::roundRobinSpray()
             target.filename.getPath(targetFilename);
             LOG(MCdebugProgressDetail, job, "Spray '%s' to '%s'", remoteFilename.str(), targetFilename.str());
 
-            OwnedIFileIO iFileIO;
-            IFile *file = createIFile(targetFilename.str());
-            iFileIO.setown(file->open(IFOwrite));
-            IFileIOStream  * partStream = createIOStream(iFileIO);
-            partStreams.add(*partStream, idx2);
+            RemoteFilename localTempFilename;
+            getDfuTempName(localTempFilename, target.filename);
+            OwnedIFile outFile = createIFile(localTempFilename);
 
-            partOffsets[idx2] = 0;
-            //processor->setOutput(partOffsets[idx2], partStream);
-            //partitioner->
+            IFileIO & outio = *outFile->openShared(IFOwrite,IFSHnone);
 
+            IFileIOStream  & partStream = *createIOStream(&outio);
+
+            partitioner->setRoundRobinTarget(outio, partStream);
+        }
+
+        // Spread the input file data among the parts
+        partitioner->runRoundRobin();
+        targetSize += partitioner->getTargetSize();
+        targetRecordCount += partitioner->getTargetRecordCount();
+
+        ForEachItemIn(idx3, targets)
+        {
+
+            //rename the files..
+            //renameDfuTempToFinal(curPartition.outputName);
+            TargetLocation & target = targets.item(idx3);
+            RemoteFilename tempFilename;
+            StringBuffer newTailname;
+            getDfuTempName(tempFilename, target.filename);
+            target.filename.getTail(newTailname);
+            OwnedIFile output = createIFile(tempFilename);
+            try
+            {
+                output->rename(newTailname);
+            }
+            catch (IException * e)
+            {
+                EXCLOG(e, "Failed to rename target file");
+                StringBuffer oldName;
+                target.filename.getPath(oldName);
+                LOG(MCdebugInfoDetail, unknownJob, "Error: Rename %s->%s failed - tring to delete target and rename again", oldName.str(), newTailname.str());
+                e->Release();
+                OwnedIFile old = createIFile(target.filename);
+                old->remove();
+                output->rename(newTailname);
+            }
+        }
+
+    }
+    examineCsvStructure();
+    DistributedFilePropertyLock lock(distributedTarget);
+    IPropertyTree &curProps = lock.queryAttributes();
+
+    //if (calcCRC())
+    //    curProps.setPropInt(FAcrc, totalCRC.get());
+    curProps.setPropInt64(FAsize, targetSize);
+
+    //if (totalCompressedSize != 0)
+    //    curProps.setPropInt64(FAcompressedSize, totalCompressedSize);
+
+
+    curProps.setPropInt64(FArecordCount, targetRecordCount);
+    ForEachItemIn(idx1, partitioners)
+    {
+        IFormatPartitioner * partitioner = &partitioners.item(idx1);
+        CRC32Merger partCRC;
+        ForEachItemIn(idx2, targets)
+        {
+            Owned<IDistributedFilePart> curPart = distributedTarget->getPart(idx2);
+
+            // TODO: Create DistributedFilePropertyLock for parts
+            curPart->lockProperties();
+            IPropertyTree& curProps = curPart->queryAttributes();
+            off64_t partSize = partitioner->getTargetPartSize(idx2);
+            curProps.setPropInt64(FAsize, partSize);
+
+            TargetLocation & curTarget = targets.item(idx2);
+
+            CDateTime temp;
+            StringBuffer timestr;
+            time_t t;
+            time(&t);
+
+            temp.set(t);
+            curProps.setProp("@modified", temp.getString(timestr).str());
+
+            curProps.setPropInt(FAcrc, partCRC.get());
+
+            curPart->unlockProperties();
         }
 
     }
@@ -3011,7 +3100,14 @@ void FileSprayer::spray()
     useRoundRobin = true;
     LOG(MCdebugInfo, job, "use round-robin method: %s", (useRoundRobin ? "yes": "no"));
     if (useRoundRobin && (targets.ordinality() > 1) && srcFormat.isCsv())
+    {
+        LOG(MCdebugInfo, job, "use round-robin method: %s, targets.ordinality: %d, srcFormat.isCsv: %s"
+                              ,(useRoundRobin ? "yes": "no")
+                              ,targets.ordinality()
+                              , ( srcFormat.isCsv() ? "yes" : "no")
+                              );
         roundRobinSpray();
+    }
     else
         standardSpray();
 
@@ -3212,7 +3308,10 @@ void FileSprayer::updateTargetProperties()
         IPropertyTree &curProps = lock.queryAttributes();
         if (calcCRC())
             curProps.setPropInt(FAcrc, totalCRC.get());
-        curProps.setPropInt64(FAsize, totalLength);
+
+        // TODO This must clean up as well as the whole Attributes/Properies handling
+        if (!curProps.hasProp(FAsize) || (curProps.getPropInt64(FAsize, 0L) == 0L) )
+            curProps.setPropInt64(FAsize, totalLength);
 
         if (totalCompressedSize != 0)
             curProps.setPropInt64(FAcompressedSize, totalCompressedSize);

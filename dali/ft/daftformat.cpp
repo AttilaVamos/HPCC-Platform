@@ -856,6 +856,7 @@ size32_t CCsvPartitioner::getSplitRecordSize(const byte * start, unsigned maxToR
                    recordStructure.append("END;");
                }
 
+               recordsFound++;
                if (processFullBuffer)
                {
                    last = cur + matchLen;
@@ -970,9 +971,123 @@ void CCsvPartitioner::setTarget(IOutputProcessor * _target)
     CInputBasePartitioner::setTarget(hook);
 }
 
+void CCsvPartitioner::runRoundRobin()
+{
+    roundRobinProcess();
+}
+
+void CCsvPartitioner::setSourceSize(off64_t size)
+{
+    totalSize = size;
+}
+void CCsvPartitioner::setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _partStream)
+{
+    outIos.add(_outio, targetCount);
+
+    partStreams.add(_partStream, targetCount);
+
+    offset_t offs = 0;
+    partOffsets.append(offs);
+
+    targetCount++;
+}
+
 void CCsvPartitioner::roundRobinProcess()
 {
+    for (unsigned i = 0; i != partOffsets.ordinality(); i++)
+    {
+        LOG(MCdebugProgress, unknownJob, "partOffsets[%u] = %llu", i, partOffsets.item(i));
+        partOffsets.replace((offset_t) 0, i);
+    }
 
+    unsigned maxPart = partStreams.ordinality();
+    aindex_t idx = 0;
+
+#define REAL_DATA 1
+#ifdef REAL_DATA
+    const byte *buffer = bufferBase();
+    numInBuffer = bufferOffset = 0;
+    offset_t nextInputOffset = 0;
+
+    bool processFullBuffer = false;
+    if (totalSize > 4 * bufferSize )
+    	processFullBuffer = true;
+
+    LOG(MCdebugProgress, unknownJob, "totalSize:%lld, bufferSize:%u, processFullBuffer:%s", totalSize, bufferSize, (processFullBuffer ? "true": "false"));
+
+    while (nextInputOffset <= totalSize)
+    {
+        ensureBuffered(headerSize);
+        assertex((headerSize ==0) || (numInBuffer != bufferOffset));
+
+        recordsFound = 0;
+        unsigned size = getSplitRecordSize(buffer+bufferOffset, numInBuffer-bufferOffset, processFullBuffer);
+        assertex(recordsFound == 0);
+
+        size32_t recLen = size;
+        partStreams.item(idx).write(recLen, buffer+bufferOffset);
+
+        // Update info
+        off64_t oldOffs = partOffsets.item(idx);
+        off64_t offs = oldOffs + recLen;
+        partOffsets.replace(offs, idx);
+        LOG(MCdebugProgress, unknownJob, "idx:%u, oldOffset:%ld, recLen:%u, offs:%ld", idx, oldOffs, recLen, offs);
+
+        targetSize += recLen;
+        targetRecordCount += recordsFound;
+
+        ensureBuffered(size);
+        nextInputOffset += size;
+        bufferOffset += size;
+
+        // Switch to next part
+        idx++;
+        if (idx == maxPart )
+            idx = 0;
+    }
+
+#else
+    for (unsigned i = 0; i != 4; i++)
+    {
+
+        StringBuffer testText("Test text,Part id:");
+        testText.append(idx).append(",loop:").append(i).append(',').append((rand()%25),"abcdefghijklmnopgrstuvxyz").append("\n");
+
+        size32_t recLen = testText.length();
+        partStreams.item(idx).write(recLen, testText.str());
+
+        // Update info
+        off64_t oldOffs = partOffsets.item(idx);
+        off64_t offs = oldOffs + recLen;
+        partOffsets.replace(offs, idx);
+        LOG(MCdebugProgress, unknownJob, "idx:%u, oldOffset:%ld, recLen:%u, offs:%ld", idx, oldOffs, recLen, offs);
+
+        targetSize += recLen;
+        targetRecordCount++;
+
+
+        // Switch to next part
+        idx++;
+        if (idx == maxPart )
+            idx = 0;
+
+    }
+#endif
+
+    ForEachItemIn(idx2, partStreams)
+    {
+        IFileIOStream & partStream = partStreams.item(idx2);
+        partStream.flush();
+
+        IFileIO & outio = outIos.item(idx2);
+        outio.flush();
+        outio.close();
+    }
+}
+
+off64_t CCsvPartitioner::getTargetPartSize(unsigned _partIndex)
+{
+    return partOffsets.item(_partIndex);
 }
 
 void CCsvPartitioner::addTargetFilePartStream(aindex_t idx, IFileIOStream  * partStream)

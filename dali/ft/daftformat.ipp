@@ -41,12 +41,18 @@ public:
     virtual void setRecordStructurePresent(bool _recordStructurePresent);
     virtual void getRecordStructure(StringBuffer & _recordStructure);
     virtual void enableRoundRobin() { UNIMPLEMENTED; };
+    virtual void runRoundRobin()  { UNIMPLEMENTED; };
+    virtual void setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _partStream)  { UNIMPLEMENTED; };
+    virtual off64_t getTargetSize() { UNIMPLEMENTED; };
+    virtual off64_t getTargetRecordCount() { UNIMPLEMENTED; };
+    virtual off64_t getTargetPartSize(unsigned _partIndex) {  UNIMPLEMENTED; };
+    virtual void setSourceSize(off64_t size) { UNIMPLEMENTED; };
 
 protected:
     virtual void findSplitPoint(offset_t curOffset, PartitionCursor & cursor) = 0;
     virtual bool splitAfterPoint() { return false; }
     virtual void killBuffer() = 0;
-    
+
 
     void commonCalcPartitions();
 
@@ -126,7 +132,7 @@ protected:
 
 
 //---------------------------------------------------------------------------
-// More complex processors that need to read the source file - e.g. because 
+// More complex processors that need to read the source file - e.g. because
 // output offset being calculated.
 
 
@@ -152,13 +158,13 @@ protected:
     void seekInput(offset_t offset);
     offset_t tellInput();
 
-    inline byte *bufferBase()  
-    { 
-        return (byte *)((bufattr.length()!=bufferSize)?bufattr.allocate(bufferSize):bufattr.bufferBase()); 
+    inline byte *bufferBase()
+    {
+        return (byte *)((bufattr.length()!=bufferSize)?bufattr.allocate(bufferSize):bufattr.bufferBase());
     }
     virtual void killBuffer()  { bufattr.clear(); }
     virtual void clearBufferOverrun() { numOfBufferOverrun = 0; numOfProcessedBytes = 0; }
-protected: 
+protected:
     Owned<IFileIOStream>   inStream;
     MemoryAttr             bufattr;
     size32_t               headerSize;
@@ -243,6 +249,12 @@ public:
     virtual void getRecordStructure(StringBuffer & _recordStructure);
     virtual void setRecordStructurePresent( bool _isRecordStructurePresent) {isRecordStructurePresent = _isRecordStructurePresent;}
     virtual void enableRoundRobin() {isRoundRobin = true;};
+    virtual void runRoundRobin();
+    virtual void setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _partStream);
+    virtual off64_t getTargetSize() { return targetSize; };
+    virtual off64_t getTargetRecordCount() {return targetRecordCount; };
+    virtual off64_t getTargetPartSize(unsigned _partIndex);
+    virtual void setSourceSize(off64_t size);
 
 protected:
     virtual size32_t getSplitRecordSize(const byte * record, unsigned maxToRead, bool processFullBuffer, bool ateof);
@@ -256,7 +268,7 @@ private:
     void storeFieldName(const char * start, unsigned len);
     void roundRobinProcess();
     void addTargetFilePartStream(aindex_t idx, IFileIOStream  * partStream);
-    
+
 protected:
     enum { NONE=0, SEPARATOR=1, TERMINATOR=2, WHITESPACE=3, QUOTE=4, ESCAPE=5 };
     unsigned        maxElementLength;
@@ -268,10 +280,14 @@ protected:
     unsigned        fieldCount;
     Owned<KeptAtomTable> fields;
     bool            isFirstRow;
-    //offset_t partOffsets[numParts];
+    UInt64Array     partOffsets;
+    IArrayOf<IFileIO> outIos;
     IArrayOf<IFileIOStream> partStreams;
-    IArrayOf<offset_t> partOffsets;
     bool            isRoundRobin = false;
+    aindex_t        targetCount = 0;
+    off64_t         targetSize = 0;
+    off64_t         targetRecordCount = 0;
+    off64_t         recordsFound = 0;
 };
 
 
@@ -300,6 +316,12 @@ public:
     virtual void getRecordStructure(StringBuffer & _recordStructure) { _recordStructure = recordStructure; }
     virtual void setRecordStructurePresent( bool _isRecordStructurePresent) {isRecordStructurePresent = _isRecordStructurePresent;}
     virtual void enableRoundRobin() { UNIMPLEMENTED; };
+    virtual void runRoundRobin()  { UNIMPLEMENTED; };
+    virtual void setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _partStream)  { UNIMPLEMENTED; };
+    virtual off64_t getTargetSize() { UNIMPLEMENTED; };
+    virtual off64_t getTargetRecordCount() { UNIMPLEMENTED; };
+    virtual off64_t getTargetPartSize(unsigned _partIndex) {  UNIMPLEMENTED; };
+    virtual void setSourceSize(off64_t size) { UNIMPLEMENTED; };
 
 protected:
     virtual size32_t getSplitRecordSize(const byte * record, unsigned maxToRead, bool processFullBuffer, bool ateof);
@@ -614,7 +636,7 @@ public:
     size32_t getEndOfRecord(const byte * record, unsigned maxToRead);
     offset_t getHeaderLength(BufferedDirectReader & reader);
     offset_t getFooterLength(BufferedDirectReader & reader, offset_t size);
-    
+
     unsigned getMaxElementLength() { return maxElementLength; }
 
 protected:
@@ -677,6 +699,12 @@ public:
     virtual void setRecordStructurePresent(bool _recordStructurePresent);
     virtual void getRecordStructure(StringBuffer & _recordStructure);
     virtual void enableRoundRobin() { UNIMPLEMENTED; };
+    virtual void runRoundRobin()  { UNIMPLEMENTED; };
+    virtual void setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _partStream)  { UNIMPLEMENTED; };
+    virtual off64_t getTargetSize() { UNIMPLEMENTED; };
+    virtual off64_t getTargetRecordCount() { UNIMPLEMENTED; };
+    virtual off64_t getTargetPartSize(unsigned _partIndex) {  UNIMPLEMENTED; };
+    virtual void setSourceSize(off64_t size) { UNIMPLEMENTED; };
 
 protected:
     void callRemote();
@@ -720,7 +748,7 @@ public:
 
 protected:
     offset_t                outputOffset;
-    OwnedIFileIOStream      out; 
+    OwnedIFileIOStream      out;
 };
 
 class DALIFT_API CFixedOutputProcessor : public COutputProcessor

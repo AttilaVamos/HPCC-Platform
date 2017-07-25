@@ -34,7 +34,7 @@ struct PartitionCursor
 {
 public:
     PartitionCursor(offset_t _inputOffset)  { inputOffset = nextInputOffset = _inputOffset; outputOffset = 0; trimLength = 0; }
-    
+
     offset_t        inputOffset;
     offset_t        nextInputOffset;
     offset_t        outputOffset;
@@ -61,6 +61,12 @@ public:
     virtual void setTarget(IOutputProcessor * _target) = 0;
     virtual void setRecordStructurePresent(bool _recordStructurePresent) = 0;
     virtual void getRecordStructure(StringBuffer & _recordStructure) = 0;
+    virtual void runRoundRobin() = 0;
+    virtual void setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _partStream) = 0;
+    virtual off64_t getTargetSize() = 0;
+    virtual off64_t getTargetRecordCount() = 0;
+    virtual off64_t getTargetPartSize(unsigned _partIndex) = 0;
+    virtual void setSourceSize(off64_t size) = 0;
 };
 
 interface IFormatProcessor : public IFormatPartitioner

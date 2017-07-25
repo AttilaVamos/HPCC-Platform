@@ -132,6 +132,19 @@ static const char * DfuOperatonStr[] =
         "DFUreplicate",
         "DFUtransfer"
     };
+
+typedef enum
+    {
+        dfu_spray_original = 0,
+        dfu_spray_roundrobin,
+    } dfu_spray_algorithm;
+
+static const char * DfuSprayAlgorithmStr[] =
+    {
+        "DFUSprayOriginal",      // Full text processing for quoted CSV files
+        "DFUSprayRoundRobin",
+    };
+
 interface IFileSprayer : public IInterface
 {
 public:
