@@ -47,6 +47,7 @@ public:
     virtual off64_t getTargetRecordCount() { UNIMPLEMENTED; };
     virtual off64_t getTargetPartSize(unsigned _partIndex) {  UNIMPLEMENTED; };
     virtual void setSourceSize(off64_t size) { UNIMPLEMENTED; };
+    virtual unsigned getTargetPartCrc(unsigned _partIndex) { UNIMPLEMENTED; };
 
 protected:
     virtual void findSplitPoint(offset_t curOffset, PartitionCursor & cursor) = 0;
@@ -255,6 +256,7 @@ public:
     virtual off64_t getTargetRecordCount() {return targetRecordCount; };
     virtual off64_t getTargetPartSize(unsigned _partIndex);
     virtual void setSourceSize(off64_t size);
+    virtual unsigned getTargetPartCrc(unsigned _partIndex);
 
 protected:
     virtual size32_t getSplitRecordSize(const byte * record, unsigned maxToRead, bool processFullBuffer, bool ateof);
@@ -285,8 +287,11 @@ protected:
     IArrayOf<IFileIOStream> partStreams;
     bool            isRoundRobin = false;
     aindex_t        targetCount = 0;
-    off64_t          targetSize = 0;
-    off64_t          targetRecordCount = 0;
+    off64_t         targetSize = 0;
+    off64_t         targetRecordCount = 0;
+    off64_t         recordsFound = 0;
+    IArrayOf<CrcIOStream> partCrcStreams;
+    UnsignedArray   partCrc;
 };
 
 
@@ -321,6 +326,7 @@ public:
     virtual off64_t getTargetRecordCount() { UNIMPLEMENTED; };
     virtual off64_t getTargetPartSize(unsigned _partIndex) {  UNIMPLEMENTED; };
     virtual void setSourceSize(off64_t size) { UNIMPLEMENTED; };
+    virtual unsigned getTargetPartCrc(unsigned _partIndex) { UNIMPLEMENTED; };
 
 protected:
     virtual size32_t getSplitRecordSize(const byte * record, unsigned maxToRead, bool processFullBuffer, bool ateof);
@@ -704,6 +710,7 @@ public:
     virtual off64_t getTargetRecordCount() { UNIMPLEMENTED; };
     virtual off64_t getTargetPartSize(unsigned _partIndex) {  UNIMPLEMENTED; };
     virtual void setSourceSize(off64_t size) { UNIMPLEMENTED; };
+    virtual unsigned getTargetPartCrc(unsigned _partIndex) { UNIMPLEMENTED; };
 
 protected:
     void callRemote();

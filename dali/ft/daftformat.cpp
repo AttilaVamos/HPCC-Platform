@@ -856,6 +856,7 @@ size32_t CCsvPartitioner::getSplitRecordSize(const byte * start, unsigned maxToR
                    recordStructure.append("END;");
                }
 
+               recordsFound++;
                if (processFullBuffer)
                {
                    last = cur + matchLen;
@@ -983,6 +984,11 @@ void CCsvPartitioner::setRoundRobinTarget(IFileIO & _outio, IFileIOStream & _par
 {
     outIos.add(_outio, targetCount);
 
+    CrcIOStream & crcOut = * new CrcIOStream(&_partStream, 0);
+
+    crcOut.seek(0, IFSbegin);
+    partCrcStreams.add(crcOut, targetCount);
+
     partStreams.add(_partStream, targetCount);
 
     offset_t offs = 0;
@@ -1007,26 +1013,33 @@ void CCsvPartitioner::roundRobinProcess()
     const byte *buffer = bufferBase();
     numInBuffer = bufferOffset = 0;
     offset_t nextInputOffset = 0;
+
+    bool processFullBuffer = false;
+    if (totalSize > 4 * bufferSize )
+    	processFullBuffer = true;
+
+    LOG(MCdebugProgress, unknownJob, "totalSize:%lld, bufferSize:%u, processFullBuffer:%s", totalSize, bufferSize, (processFullBuffer ? "true": "false"));
+
     while (nextInputOffset < totalSize)
     {
         ensureBuffered(headerSize);
         assertex((headerSize ==0) || (numInBuffer != bufferOffset));
 
-        bool processFullBuffer = true; //false;
-
+        recordsFound = 0;
         unsigned size = getSplitRecordSize(buffer+bufferOffset, numInBuffer-bufferOffset, processFullBuffer);
+        assertex(recordsFound != 0);
 
         size32_t recLen = size;
-        partStreams.item(idx).write(recLen, buffer+bufferOffset);
+        partCrcStreams.item(idx).write(recLen, buffer+bufferOffset);
 
         // Update info
         off64_t oldOffs = partOffsets.item(idx);
         off64_t offs = oldOffs + recLen;
         partOffsets.replace(offs, idx);
-        LOG(MCdebugProgress, unknownJob, "idx:%u, oldOffset:%ld, recLen:%u, offs:%ld", idx, oldOffs, recLen, offs);
+        //LOG(MCdebugProgress, unknownJob, "idx:%u, oldOffset:%ld, recLen:%u, offs:%ld", idx, oldOffs, recLen, offs);
 
         targetSize += recLen;
-        targetRecordCount++;
+        targetRecordCount += recordsFound;
 
         ensureBuffered(size);
         nextInputOffset += size;
@@ -1068,6 +1081,11 @@ void CCsvPartitioner::roundRobinProcess()
 
     ForEachItemIn(idx2, partStreams)
     {
+        CrcIOStream & crcOut = partCrcStreams.item(idx2);
+        unsigned crc = crcOut.getCRC();
+        partCrc.append(crc);
+        LOG(MCdebugProgress, unknownJob, "idx:%u, CRC::%u", idx2, crc);
+
         IFileIOStream & partStream = partStreams.item(idx2);
         partStream.flush();
 
@@ -1080,6 +1098,11 @@ void CCsvPartitioner::roundRobinProcess()
 off64_t CCsvPartitioner::getTargetPartSize(unsigned _partIndex)
 {
     return partOffsets.item(_partIndex);
+}
+
+unsigned CCsvPartitioner::getTargetPartCrc(unsigned _partIndex)
+{
+    return partCrc.item(_partIndex);
 }
 
 void CCsvPartitioner::addTargetFilePartStream(aindex_t idx, IFileIOStream  * partStream)

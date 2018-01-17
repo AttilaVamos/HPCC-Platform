@@ -67,6 +67,7 @@ public:
     virtual off64_t getTargetRecordCount() = 0;
     virtual off64_t getTargetPartSize(unsigned _partIndex) = 0;
     virtual void setSourceSize(off64_t size) = 0;
+    virtual unsigned getTargetPartCrc(unsigned _partIndex) = 0;
 };
 
 interface IFormatProcessor : public IFormatPartitioner

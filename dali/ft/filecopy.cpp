@@ -2879,8 +2879,6 @@ void FileSprayer::roundRobinSpray()
     FormatPartitionerArray partitioners;
 
     gatherFileSizes(true);
-    //if (!replicate||pretendreplicate)
-    //    analyseFileHeaders(!pretendreplicate); // if pretending replicate don't want to remove headers
     afterGatherFileSizes();
 
     unsigned numParts = targets.ordinality();
@@ -2980,6 +2978,9 @@ void FileSprayer::roundRobinSpray()
             off64_t partSize = partitioner->getTargetPartSize(idx2);
             curProps.setPropInt64(FAsize, partSize);
 
+            unsigned partCrc = partitioner->getTargetPartCrc(idx2);
+            curProps.setPropInt(FAcrc, partCrc);
+
             TargetLocation & curTarget = targets.item(idx2);
 
             CDateTime temp;
@@ -2989,8 +2990,6 @@ void FileSprayer::roundRobinSpray()
 
             temp.set(t);
             curProps.setProp("@modified", temp.getString(timestr).str());
-
-            curProps.setPropInt(FAcrc, partCRC.get());
 
             curPart->unlockProperties();
         }
