@@ -66,7 +66,10 @@ class ECLcmd(Shell):
         args = args + eclfile.getFParameters()
 
         if cmd == 'publish':
-            args.append(eclfile.getArchive())
+            archieveName = eclfile.getArchive()
+            archieveName = archieveName.replace('.xml', '-' + cluster + '.xml')
+            
+            args.append(archieveName)
 
             name = kwargs.pop('name', False)
             if not name:
@@ -88,8 +91,10 @@ class ECLcmd(Shell):
 
             args = args + eclfile.getStoredInputParameters()
 
-
-            args.append(eclfile.getArchive())
+            archieveName = eclfile.getArchive()
+            archieveName = archieveName.replace('.xml', '-' + cluster + '.xml')
+            
+            args.append(archieveName)
 
         data = ""
         wuid = "N/A"

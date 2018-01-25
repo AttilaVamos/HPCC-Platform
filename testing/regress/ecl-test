@@ -24,6 +24,8 @@ import platform
 import atexit
 import traceback
 import glob
+import thread
+import time
 
 from hpcc.util import argparse
 from hpcc.regression.regress import Regression
@@ -91,25 +93,89 @@ class RegressMain:
             except IOError:
                 logging.error("%s. Query %s does not exist!" % (1,  eclfile.getBaseEcl()))
                 exit()
+                
+    def targetChild(self, tid, mutex,  cluster):
+        print('Hello from thread %d, cluster: %s' % (tid,  cluster))
+        args = self.args
+        args.target = cluster
+        regress = Regression(args)
+        if self.args.func == 'setup':
+            suite = regress.Setup(args)
+        elif self.args.func == 'run':
+            regress.bootstrap(cluster, args)
+            suite = regress.suites[cluster]
+        else:
+            print('--pt not implemented for this function %s. Thread %d finished on %s' % (self.args.func, tid, cluster))
+            mutex.acquire()
+            time.sleep(10)
+            mutex.release()
+            return
+        mutex.acquire()
+        if  args.pq :
+            regress.runSuiteP(cluster, suite)
+        else:
+            regress.runSuite(cluster, suite)
+        
+        print('Thread %d finished on %s' % (tid, cluster))
+        mutex.release()
 
     def setup(self):
-        # Go through the cluster list
-        for cluster in self.targetClusters:
-            self.args.target = cluster
-            if  self.args.pq :
-                self.regress.runSuiteP(cluster, self.regress.Setup(self.args))
-            else:
-                self.regress.runSuite(cluster, self.regress.Setup(self.args))
-
+        startScriptTimestamp = time.time()
+        if self.args.pt and len(self.targetClusters) > 1:
+            exitmutexes = [thread.allocate_lock() for i in range(len(self.targetClusters))]
+            th = 0;
+            for cluster in self.targetClusters:
+                print('Start thread %d on cluster %s' % ( th, cluster))
+                thread.start_new_thread(self.targetChild, (th, exitmutexes[th], cluster))
+                while not exitmutexes[th].locked(): pass
+                th += 1
+            
+            # Wait for all finished     
+            for mutex in exitmutexes:
+                while mutex.locked(): pass
+            pass
+        else:
+            # Go through the cluster list
+            for cluster in self.targetClusters:
+                self.args.target = cluster
+                if  self.args.pq :
+                    self.regress.runSuiteP(cluster, self.regress.Setup(self.args))
+                else:
+                    self.regress.runSuite(cluster, self.regress.Setup(self.args))
+            
+        endScriptTimestamp = time.time()
+        ellaps = endScriptTimestamp-startScriptTimestamp
+        print "All task processed."
+        print("Total time %d sec." % (ellaps))
+            
     def run(self):
-        # Go through the cluster list
-        for cluster in self.targetClusters:
-            self.regress.bootstrap(cluster, self.args)
-            self.args.target = cluster
-            if  self.args.pq :
-                self.regress.runSuiteP(cluster, self.regress.suites[cluster])
-            else:
-                self.regress.runSuite(cluster, self.regress.suites[cluster])
+        startScriptTimestamp = time.time()
+        if self.args.pt and len(self.targetClusters) > 1:
+            exitmutexes = [thread.allocate_lock() for i in range(len(self.targetClusters))]
+            th = 0;
+            for cluster in self.targetClusters:
+                print('Start thread %d on cluster %s' % ( th, cluster))
+                thread.start_new_thread(self.targetChild, (th, exitmutexes[th], cluster))
+                while not exitmutexes[th].locked(): pass
+                th += 1
+            # Wait for all finished    
+            for mutex in exitmutexes:
+                while mutex.locked(): pass
+            pass
+        else:
+            # Go through the cluster list
+            for cluster in self.targetClusters:
+                self.regress.bootstrap(cluster, self.args)
+                self.args.target = cluster
+                if  self.args.pq :
+                    self.regress.runSuiteP(cluster, self.regress.suites[cluster])
+                else:
+                    self.regress.runSuite(cluster, self.regress.suites[cluster])
+                    
+        endScriptTimestamp = time.time()
+        ellaps = endScriptTimestamp-startScriptTimestamp
+        print "All task processed."
+        print("Total time %d sec." % (ellaps))
 
     def main(self):
         prog = "ecl-test"
@@ -159,6 +225,7 @@ class RegressMain:
                                 action = 'store_true')
         commonParser.add_argument('--server', help="ESP server address. Default value (espIp) defined in ecl-test.json config file.",
                                 nargs='?', default=None,  metavar="networkAddress")
+        commonParser.add_argument('--pt', help="Parallel target execution.", action = 'store_true')
 
         executionParser=argparse.ArgumentParser(add_help=False)
         executionParser.add_argument('--runclass', '-r', help="run subclass(es) of the suite. Default value is 'all'",

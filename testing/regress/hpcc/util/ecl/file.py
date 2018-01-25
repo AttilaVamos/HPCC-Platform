@@ -56,6 +56,7 @@ class ECLFile:
             pass
 
     def __init__(self, ecl, dir_a, dir_ex, dir_r, dir_inc, cluster, args):
+        logging.debug("%3d. ECLFile(ecl:%s, cluster:%s).", self.taskId, ecl,  cluster)
         self.dir_ec = os.path.dirname(ecl)
         self.dir_ex = dir_ex
         self.dir_r = dir_r
@@ -226,7 +227,8 @@ class ECLFile:
         return path
 
     def getResults(self):
-        return os.path.join(self.dir_r, self.getJobname() + '.xml')
+        logging.debug("%3d. getResults (cluster:'%s')", self.taskId, self.cluster )
+        return os.path.join(self.dir_r, self.getJobname() + '-' + self.cluster + '.xml')
 
     def getArchive(self):
         logging.debug("%3d. getArchive (isVersions:'%s')", self.taskId, self.isVersions )

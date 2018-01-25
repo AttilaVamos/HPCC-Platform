@@ -47,6 +47,7 @@ class ECLCC(Shell):
         self.addIncludePath(ecl.dir_inc)
         dirname = ecl.dir_a
         filename = ecl.getArchive()
+        filename = filename.replace('.xml', '-' + ecl.cluster + '.xml')
 
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
