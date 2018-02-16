@@ -45,7 +45,7 @@ protected:
     virtual void findSplitPoint(offset_t curOffset, PartitionCursor & cursor) = 0;
     virtual bool splitAfterPoint() { return false; }
     virtual void killBuffer() = 0;
-    
+
 
     void commonCalcPartitions();
 
@@ -125,7 +125,7 @@ protected:
 
 
 //---------------------------------------------------------------------------
-// More complex processors that need to read the source file - e.g. because 
+// More complex processors that need to read the source file - e.g. because
 // output offset being calculated.
 
 
@@ -151,13 +151,13 @@ protected:
     void seekInput(offset_t offset);
     offset_t tellInput();
 
-    inline byte *bufferBase()  
-    { 
-        return (byte *)((bufattr.length()!=bufferSize)?bufattr.allocate(bufferSize):bufattr.bufferBase()); 
+    inline byte *bufferBase()
+    {
+        return (byte *)((bufattr.length()!=bufferSize)?bufattr.allocate(bufferSize):bufattr.bufferBase());
     }
     virtual void killBuffer()  { bufattr.clear(); }
     virtual void clearBufferOverrun() { numOfBufferOverrun = 0; numOfProcessedBytes = 0; }
-protected: 
+protected:
     Owned<IFileIOStream>   inStream;
     MemoryAttr             bufattr;
     size32_t               headerSize;
@@ -252,7 +252,7 @@ protected:
 
 private:
     void storeFieldName(const char * start, unsigned len);
-    
+
 protected:
     enum { NONE=0, SEPARATOR=1, TERMINATOR=2, WHITESPACE=3, QUOTE=4, ESCAPE=5 };
     unsigned        maxElementLength;
@@ -541,11 +541,16 @@ public:
 protected:
     virtual void findSplitPoint(offset_t splitOffset, PartitionCursor & cursor)
     {
+        cursor.inputOffset = 0;
         if (!splitOffset) //header + 0 is first offset
             return;
 
         offset_t prevRowEnd = 0;
-        json->findRowEnd(splitOffset-thisOffset + thisHeaderSize, prevRowEnd); //false return just means we're processing the end
+        if (!json->findRowEnd(splitOffset-thisOffset + thisHeaderSize, prevRowEnd)) //false return just means we're processing the end
+        {
+            cursor.inputOffset = prevRowEnd;
+            return;
+        }
         if (!json->checkFoundRowStart())
             return;
         if (!json->newRowSet) //get rid of extra delimiter if we haven't closed and reopened in the meantime
@@ -556,9 +561,15 @@ protected:
         }
         cursor.inputOffset = json->getRowOffset() + thisOffset;
         if (json->findNextRow())
+        {
+            cursor.inputOffset = json->getRowOffset() + thisOffset;
             cursor.nextInputOffset = json->getRowOffset() + thisOffset;
+        }
         else
+        {
+            cursor.inputOffset  =  prevRowEnd;
             cursor.nextInputOffset = cursor.inputOffset;  //eof
+        }
     }
 
 protected:
@@ -605,7 +616,7 @@ public:
     size32_t getEndOfRecord(const byte * record, unsigned maxToRead);
     offset_t getHeaderLength(BufferedDirectReader & reader);
     offset_t getFooterLength(BufferedDirectReader & reader, offset_t size);
-    
+
     unsigned getMaxElementLength() { return maxElementLength; }
 
 protected:
@@ -710,7 +721,7 @@ public:
 
 protected:
     offset_t                outputOffset;
-    OwnedIFileIOStream      out; 
+    OwnedIFileIOStream      out;
 };
 
 class DALIFT_API CFixedOutputProcessor : public COutputProcessor
