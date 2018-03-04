@@ -252,6 +252,8 @@ interface IConstDFUfileSpec: extends IInterface
     virtual StringBuffer &getRawDirectory(StringBuffer &str) const = 0;
     virtual StringBuffer &getRawFileMask(StringBuffer &str) const = 0;
     virtual bool getRemoteGroupOverride() const = 0;
+    virtual StringBuffer &getEclRecord(StringBuffer &str) const = 0;
+
 };
 
 interface IDFUfileSpec: extends IConstDFUfileSpec
@@ -285,6 +287,7 @@ interface IDFUfileSpec: extends IConstDFUfileSpec
     virtual IPropertyTree *queryUpdatePartProperties(unsigned partidx) = 0;
     virtual void setRoxiePrefix(const char *val) = 0;   // extra prefix to add to file name
     virtual void setRemoteGroupOverride(bool set) = 0;
+    virtual void setEclRecord(const char *eclRecord) = 0;
 };
 
 

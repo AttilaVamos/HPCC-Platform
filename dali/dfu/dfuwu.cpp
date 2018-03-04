@@ -804,6 +804,11 @@ public:
             ret->setTraceName(s.str());
         else if (getFileMask(s).length())
             ret->setTraceName(s.str());
+
+        StringBuffer eclRecord;
+        if (getEclRecord(eclRecord).length())
+            ret->queryProperties().setProp("ECL", eclRecord);
+
         bool initdone = false;
         StringBuffer partmask;
         if (getFileMask(partmask).length())
@@ -1679,6 +1684,18 @@ public:
     {
         queryRoot()->setPropBool("@remoteGroupOverride",set);
     }
+
+    virtual StringBuffer &getEclRecord(StringBuffer &str) const
+    {
+        queryRoot()->getProp("@eclRecord",str);
+        return str;
+    }
+
+    virtual void setEclRecord(const char *eclRecord)
+    {
+        queryRoot()->setProp("@eclRecord", eclRecord);
+    }
+
 
 };
 

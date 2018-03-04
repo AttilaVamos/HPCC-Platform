@@ -1927,6 +1927,10 @@ bool CFileSprayEx::onSprayFixed(IEspContext &context, IEspSprayFixed &req, IEspS
         else
             source->setRecordSize(recordsize);
 
+        const char* eclRecord = req.getEclRecord();
+        if (eclRecord && *eclRecord)
+            source->setEclRecord(eclRecord);
+
         destination->setLogicalName(destname);
         destination->setDirectory(destFolder.str());
 
