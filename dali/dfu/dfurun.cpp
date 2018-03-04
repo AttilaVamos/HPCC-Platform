@@ -1365,6 +1365,7 @@ public:
                     if (!dstFile&&!multiclusterinsert) {
                         throw MakeStringException(-1,"Destination file %s could not be created",tmp.str());
                     }
+
                 }
                 break;
             }

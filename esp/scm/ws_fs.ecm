@@ -331,6 +331,9 @@ ESPrequest [nil_remove] SprayFixed
     [min_ver("1.10")] bool quotedTerminator(true);
     [min_ver("1.14")] int expireDays;
     [min_ver("1.14")] string DFUServerQueue;
+
+    [min_ver("1.15"),cols(80)] string eclRecord;
+
 };
 
 ESPresponse [exceptions_inline]
