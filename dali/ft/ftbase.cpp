@@ -346,13 +346,8 @@ bool FileFormat::restore(IPropertyTree * props)
         type = FFTrecfmvb;
     else if ((stricmp(format, "recfmv")==0)||(stricmp(format, "recfm-v")==0))
         type = FFTrecfmv;
-    else if (props->hasProp(FPrecordSize))
-    {
-        type = FFTfixed;
-        recordSize = props->getPropInt(FPrecordSize);
-    }
     else if (props->hasProp("ECL"))
-	{
+    {
 		StringBuffer layoutECL;
 		props->getProp("ECL", layoutECL);
 		MultiErrorReceiver errs;
@@ -367,14 +362,40 @@ bool FileFormat::restore(IPropertyTree * props)
 				size32_t recSize = meta->getFixedSize();
 				if (recSize > 0 )
 				{
+					// Check if recordSize match to what we get from ECL
+					if (props->hasProp(FPrecordSize))
+						recordSize = props->getPropInt(FPrecordSize);
+
+					if (recordSize > 0 && recordSize != recSize)
+						throwError2(DFTERR_RecordSizeNotMatch, recordSize, recSize);
+
 					type = FFTfixed;
-					recordSize = props->getPropInt(FPrecordSize);
-					//TODO compare the recordSize with the given parameter and complain if doesn't match
+					recordSize = recSize;
 					return true;
+				}
+				else
+				{
+					if (props->hasProp(FPrecordSize))
+					{
+						recordSize = props->getPropInt(FPrecordSize);
+						if (recordSize > 0 )
+						{
+							type = FFTfixed;
+							recordSize = recSize;
+							return true;
+						}
+					}
+					throwError(DFTERR_MaxRecordSizeZero);
+
 				}
 			}
 		}
 		return false;
+	}
+    else if (props->hasProp(FPrecordSize))
+	{
+		type = FFTfixed;
+		recordSize = props->getPropInt(FPrecordSize);
 	}
     else
         return false;

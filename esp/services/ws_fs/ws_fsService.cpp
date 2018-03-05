@@ -1922,8 +1922,6 @@ bool CFileSprayEx::onSprayFixed(IEspContext &context, IEspSprayFixed &req, IEspS
             source->setFormat(DFUff_variablebigendian);
             destination->setFormat(DFUff_variable);
         }
-        else if(recordsize == 0 && !nosplit)             // -ve record sizes for blocked
-            throw MakeStringException(ECLWATCH_INVALID_INPUT, "Invalid record size");
         else
             source->setRecordSize(recordsize);
 
