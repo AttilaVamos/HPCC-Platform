@@ -35,7 +35,10 @@ set (    SRCS
          fttransform.cpp 
     )
 
-include_directories ( 
+include_directories (
+         ${CMAKE_CURRENT_BINARY_DIR}  # for generated header files
+         ${CMAKE_BINARY_DIR}
+         ${CMAKE_BINARY_DIR}/oss
          ./../../common/remote 
          ./../../system/mp 
          ./../base 
@@ -43,6 +46,11 @@ include_directories (
          ./../../system/jlib 
          ./../../common/environment
          ./../../system/security/shared
+         ./../../ecl/hql
+         ./../../common/thorhelper
+         ./../../common/deftype
+         ./../../rtl/eclrtl
+         ./../../rtl/include
     )
 
 HPCC_ADD_LIBRARY( dalift SHARED ${SRCS} )
@@ -58,5 +66,7 @@ target_link_libraries ( dalift
          remote 
          dalibase 
          environment 
+         hql
+         thorhelper
     )
 

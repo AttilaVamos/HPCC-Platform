@@ -28,13 +28,22 @@ set (    SRCS
          ftslave.cpp 
     )
 
-include_directories ( 
+include_directories (
+         ${CMAKE_CURRENT_BINARY_DIR}  # for generated header files
+         ${CMAKE_BINARY_DIR}
+         ${CMAKE_BINARY_DIR}/oss
          ./../../common/remote 
          ./../../system/mp 
          ./../base 
          ./../../system/include 
          ./../../system/jlib
          ./../../system/security/shared
+         ./../../rtl/include
+         ./../../ecl/hql
+         ./../../common/thorhelper
+         ./../../common/deftype
+         ./../../rtl/eclrtl
+         ./../../rtl/include
     )
 
 HPCC_ADD_EXECUTABLE ( ftslave ${SRCS} )
@@ -48,5 +57,7 @@ target_link_libraries ( ftslave
          dalibase 
          environment 
          dalift 
+         hql
+         thorhelper
     )
 

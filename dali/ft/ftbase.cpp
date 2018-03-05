@@ -33,6 +33,9 @@
 #include "environment.hpp"
 #include "dalienv.hpp"
 #include "rmtspawn.hpp"
+#include "eclhelper.hpp"
+#include "hqlexpr.hpp"
+#include "eclhelper_dyn.hpp"
 
 
 //----------------------------------------------------------------------------
@@ -348,6 +351,31 @@ bool FileFormat::restore(IPropertyTree * props)
         type = FFTfixed;
         recordSize = props->getPropInt(FPrecordSize);
     }
+    else if (props->hasProp("ECL"))
+	{
+		StringBuffer layoutECL;
+		props->getProp("ECL", layoutECL);
+		MultiErrorReceiver errs;
+		Owned<IHqlExpression> expr = parseQuery(layoutECL.str(), &errs);
+		if (errs.errCount() == 0)
+		{
+			MemoryBuffer layoutBin;
+			if (exportBinaryType(layoutBin, expr))
+			{
+				bool isGrouped = false;
+				Owned<IOutputMetaData> meta(createTypeInfoOutputMetaData(layoutBin, isGrouped, nullptr));
+				size32_t recSize = meta->getFixedSize();
+				if (recSize > 0 )
+				{
+					type = FFTfixed;
+					recordSize = props->getPropInt(FPrecordSize);
+					//TODO compare the recordSize with the given parameter and complain if doesn't match
+					return true;
+				}
+			}
+		}
+		return false;
+	}
     else
         return false;
     return true;
