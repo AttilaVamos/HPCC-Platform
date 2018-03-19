@@ -3022,6 +3022,7 @@ bool FileSprayer::isSameSizeHeaderFooter()
 
 void FileSprayer::updateTargetProperties()
 {
+    LOG(MCdebugInfo, job, "FileSprayer::updateTargetProperties() started");
     Owned<IException> error;
     if (distributedTarget)
     {
@@ -3241,12 +3242,13 @@ void FileSprayer::updateTargetProperties()
             newRecord->setProp("@operation", getOperationTypeString());
 
             // In Spray case there is not distributedSource
+            StringBuffer fileNames;
             if (distributedSource)
             {
                 // add original file name from a single distributed source (like Copy)
                 RemoteFilename remoteFile;
                 distributedSource->queryPart(0).getFilename(remoteFile, 0);
-                splitAndStoreFileInfo(newRecord, remoteFile);
+                splitAndCollectFileInfo(newRecord, remoteFile, fileNames);
             }
             else
             {
@@ -3255,9 +3257,10 @@ void FileSprayer::updateTargetProperties()
                 {
                     FilePartInfo & curSource = sources.item(idx);
                     RemoteFilename &remoteFile = curSource.filename;
-                    splitAndStoreFileInfo(newRecord, remoteFile, idx, false);
+                    splitAndCollectFileInfo(newRecord, remoteFile, fileNames, idx, false);
                 }
             }
+            newRecord->setProp("@name", fileNames.str());
             curHistory->addPropTree("Origin",newRecord.getClear());
         }
 
@@ -3271,8 +3274,9 @@ void FileSprayer::updateTargetProperties()
         throw error.getClear();
 }
 
-void FileSprayer::splitAndStoreFileInfo(IPropertyTree * newRecord, RemoteFilename &remoteFileName,
-                                        aindex_t idx, bool isDistributedSource)
+
+void FileSprayer::splitAndCollectFileInfo(IPropertyTree * newRecord, RemoteFilename &remoteFileName,
+                                        StringBuffer & fileNames, aindex_t idx, bool isDistributedSource)
 {
     StringBuffer drive;
     StringBuffer path;
@@ -3296,15 +3300,10 @@ void FileSprayer::splitAndStoreFileInfo(IPropertyTree * newRecord, RemoteFilenam
         fileName.append(ext);
 
     // In spray multiple source files case keep all original filenames
-    if (newRecord->hasProp("@name"))
-    {
-        StringBuffer currentName;
-        newRecord->getProp("@name", currentName);
-        currentName.append(",").append(fileName);
-        fileName = currentName;
-    }
+    if (idx > 0)
+        fileNames.append(",");
 
-    newRecord->setProp("@name", fileName.str());
+    fileNames.append(fileName);
 }
 
 void FileSprayer::setOperation(dfu_operation op)

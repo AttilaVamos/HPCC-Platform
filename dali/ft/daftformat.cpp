@@ -287,9 +287,18 @@ void CInputBasePartitioner::findSplitPoint(offset_t splitOffset, PartitionCursor
         ensureBuffered(headerSize);
         assertex((headerSize ==0) || (numInBuffer != bufferOffset));
 
-        bool processFullBuffer =  (nextInputOffset + blockSize) < splitOffset;
+        unsigned size = 0;
+        if ((nextInputOffset + thisSize) <= splitOffset)
+            // If there are many small files to spray and the
+            // current file size (thisSize) is fit into this part then
+            // store it without process.
+            size = thisSize;
+        else
+        {
+            bool processFullBuffer =  (nextInputOffset + blockSize) < splitOffset;
 
-        unsigned size = getSplitRecordSize(buffer+bufferOffset, numInBuffer-bufferOffset, processFullBuffer);
+            size = getSplitRecordSize(buffer+bufferOffset, numInBuffer-bufferOffset, processFullBuffer);
+        }
 
         if (size==0)
             throwError1(DFTERR_PartitioningZeroSizedRowLink,((offset_t)(buffer+bufferOffset)));
