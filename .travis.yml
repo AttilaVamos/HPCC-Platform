@@ -13,6 +13,7 @@ before_install:
   - rm -rf build
   - mkdir build
   - NUMBER_OF_CPUS=$(( $( grep 'core\|processor' /proc/cpuinfo | awk '{print $3}' | sort -nru | head -1 ) + 1 ))
+  - NUMBER_OF_CPUS=$(( $NUMBER_OF_CPUS * 2 ))
   - echo ${NUMBER_OF_CPUS}
 script:
   - cd build
