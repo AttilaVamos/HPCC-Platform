@@ -15,6 +15,8 @@ before_install:
   - NUMBER_OF_CPUS=$(( $( grep 'core\|processor' /proc/cpuinfo | awk '{print $3}' | sort -nru | head -1 ) + 1 ))
   - NUMBER_OF_CPUS=$(( $NUMBER_OF_CPUS * 2 ))
   - echo ${NUMBER_OF_CPUS}
+  - MEMORY=$(( $( free | grep -i "mem" | awk '{ print $2}' )/ ( 1024 ** 2 ) ))
+  - echo ${MEMORY}
 script:
   - cd build
   - pwd
