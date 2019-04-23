@@ -8,7 +8,6 @@ branches:
     - master
 before_install:
   - sudo apt-get install cmake bison flex build-essential binutils-dev libldap2-dev libcppunit-dev libicu-dev libxslt1-dev zlib1g-dev libboost-regex-dev libssl-dev libarchive-dev python-dev libv8-dev default-jdk libapr1-dev libaprutil1-dev libiberty-dev libhiredis-dev libtbb-dev libxalan-c-dev libnuma-dev libevent-dev libatlas-base-dev libblas-dev libatlas-dev python3-dev libcurl4-openssl-dev libtool autotools-dev automake
-  - echo "home: $HOME"
   - echo "pwd: $(pwd)"
   - rm -rf ~/build
   - mkdir ~/build
