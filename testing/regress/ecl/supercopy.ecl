@@ -130,124 +130,109 @@ rec := RECORD
 end;
 
 // Copy
-rec supercopy(rec l) := TRANSFORM
-  SELF.msg := FileServices.fCopy(
-                       sourceLogicalName := l.sourceFileName
-                      ,destinationGroup := l.destCluster
-                      ,destinationLogicalName := l.destFileName
-                      ,ASSUPERFILE := l.asSuperfile
-                      ,ALLOWOVERWRITE := True
-                      );
-  SELF.result := l.result + ' Pass';
-  SELF.sourceFileName := l.sourceFileName;
-  SELF.destFileName := l.destFileName;
-  SELF.destCluster := l.destCluster;
-  SELF.asSuperfile := l.asSuperfile;
+supercopy(string sourceFileName, string destCluster, string destFileName, boolean asSuperFile) := FUNCTION
+  RETURN FileServices.fCopy(sourceLogicalName := sourceFileName,
+                            destinationGroup := destCluster,
+                            destinationLogicalName := destFileName,
+                            ASSUPERFILE := asSuperfile,
+                            ALLOWOVERWRITE := True
+                           );
 end;
 
-doSuperCopy(DATASET(rec) dst) := FUNCTION
-    p1a := PROJECT(NOFOLD(dst), supercopy(LEFT));
-    c1a := CATCH(NOFOLD(p1a), ONFAIL(TRANSFORM(rec,
-                                 SELF.result := dst[1].result + ' Fail',
-                                 SELF.msg := FAILMESSAGE,
-                                 SELF.sourceFileName := dst[1].sourceFileName,
-                                 SELF.destFileName := dst[1].destFileName,
-                                 SELF.destCluster := dst[1].destCluster,
-                                 SELF.asSuperfile := dst[1].asSuperfile
-                                )));
+doSuperCopy(string sourceFileName, string destFileName, string destCluster, boolean asSuperFile, string resultMsg) := FUNCTION
+    p1a := PROJECT(DATASET(ROW(TRANSFORM(rec, SELF := []))), TRANSFORM(rec, SELF.msg := supercopy(sourceFileName, destCluster, destFileName, asSuperFile);
+                                                                            SELF.result := resultMsg + ' Pass';
+                                                                            SELF.sourceFileName := sourceFileName;
+                                                                            SELF.destFileName := destFileName;
+                                                                            SELF.destCluster := destCluster;
+                                                                            SELF.asSuperFile := asSuperFile));
+    c1a := CATCH(NOFOLD(p1a), ONFAIL(TRANSFORM(rec, SELF.result := resultMsg + ' Fail',
+                                                    SELF.msg := FAILMESSAGE,
+                                                    SELF.sourceFileName := sourceFileName;
+                                                    SELF.destFileName := destFileName;
+                                                    SELF.destCluster := destCluster;
+                                                    SELF.asSuperFile := asSuperFile;
+                                              )));
 
     #if (VERBOSE = 1)
         RETURN output(c1a);
     #else
-         RETURN output(c1a, {result});
+        RETURN output(c1a, {result});
     #end
 END;
 
 
 // Superfile tests
-
 // The target should be a logical file (destination cluster is myroxie to avoid  missing info to repartitioning error)
-dst1a := DATASET([{superFile0SubName, superFile0SubLfCopyName, 'myroxie', LogicalFile, 'Copy superfile with 0 subfile as logical file:', ''}], rec);
-super0copyOut := doSuperCopy(dst1a);
-super0copyOutCheck := checkFile(dst1a[1].destFileName, LogicalFile);
+super0copyOut := doSuperCopy(superFile0SubName, superFile0SubLfCopyName, 'myroxie', LogicalFile, 'Copy superfile with 0 subfile as logical file:');
+super0copyOutCheck := checkFile(superFile0SubLfCopyName, LogicalFile);
 
 // The target should be a super file
-dst2a := NOFOLD(DATASET([{superFile0SubName, superFile0SubSfCopyName, 'mythor', SuperFile, 'Copy superfile with 0 subfile as superfile:', ''}], rec));
-super0copyOut2 := doSuperCopy(dst2a);
-super0copyOut2Check := checkFile(dst2a[1].destFileName, SuperFile);
+super0copyOut2 := doSuperCopy(superFile0SubName, superFile0SubSfCopyName, 'mythor', SuperFile, 'Copy superfile with 0 subfile as superfile:');
+super0copyOut2Check := checkFile(superFile0SubSfCopyName, SuperFile);
+
 
 
 // The target should be a logical file
-dst1b := NOFOLD(DATASET([{superFile1SubName, superFile1SubLfCopyName, 'mythor', LogicalFile, 'Copy superfile with 1 subfile as logical file:', ''}], rec));
-super1copyOut := doSuperCopy(dst1b);
-super1copyOutCheck := checkFile(dst1b[1].destFileName, LogicalFile);
+super1copyOut := doSuperCopy(superFile1SubName, superFile1SubLfCopyName, 'mythor', LogicalFile, 'Copy superfile with 1 subfile as logical file:');
+super1copyOutCheck := checkFile(superFile1SubLfCopyName, LogicalFile);
 
 // The target should be a super file
-dst2b := NOFOLD(DATASET([{superFile1SubName, superFile1SubSfCopyName, 'mythor', SuperFile, 'Copy superfile with 1 subfile  as superfile:', ''}], rec));
-super1copyOut2 := doSuperCopy(dst2b);
-super1copyOut2Check := checkFile(dst2b[1].destFileName, SuperFile);
+super1copyOut2 := doSuperCopy(superFile1SubName, superFile1SubSfCopyName, 'mythor', SuperFile, 'Copy superfile with 1 subfile  as superfile:');
+super1copyOut2Check := checkFile(superFile1SubSfCopyName, SuperFile);
+
 
 
 // The target should be a logical file
-dst1c := NOFOLD(DATASET([{superFile2SubsName, superFile2SubsLfCopyName, 'mythor', LogicalFile, 'Copy superfile with 2 subfiles as logical file:', ''}], rec));
-super2copyOut := doSuperCopy(dst1c);
-super2copyOutCheck := checkFile(dst1c[1].destFileName, LogicalFile);
+super2copyOut := doSuperCopy(superFile2SubsName, superFile2SubsLfCopyName, 'mythor', LogicalFile, 'Copy superfile with 2 subfiles as logical file:');
+super2copyOutCheck := checkFile(superFile2SubsLfCopyName, LogicalFile);
 
 // The target should be a super file
-dst2c := NOFOLD(DATASET([{superFile2SubsName, superFile2SubsSfCopyName, 'mythor', SuperFile, 'Copy superfilewith 2 subfiles as superfile:', ''}], rec));
-super2copyOut2 := doSuperCopy(dst2c);
-super2copyOut2Check := checkFile(dst2c[1].destFileName, SuperFile);
-
+super2copyOut2 := doSuperCopy(superFile2SubsName, superFile2SubsSfCopyName, 'mythor', SuperFile, 'Copy superfilewith 2 subfiles as superfile:');
+super2copyOut2Check := checkFile(superFile2SubsSfCopyName, SuperFile);
 
 
 
 // Superindex copy tests
 
-
 // The target should be a logical file (destination cluster is myroxie to avoid missing info to repartitioning error)
-dst3a := NOFOLD(DATASET([{superIndex0SubName, superIndex0SubLfCopyName, 'myroxie', LogicalFile, 'Copy superindex with 0 subfile as logical file:', ''}], rec));
-super0copyOut3 := doSuperCopy(dst3a);
-super0copyOut3Check := checkFile(dst3a[1].destFileName, LogicalFile);
+super0copyOut3 := doSuperCopy(superIndex0SubName, superIndex0SubLfCopyName, 'myroxie', LogicalFile, 'Copy superindex with 0 subfile as logical file:');
+super0copyOut3Check := checkFile(superIndex0SubLfCopyName, LogicalFile);
 
 // The target should be a superindex file
-dst4a := NOFOLD(DATASET([{superIndex0SubName, superIndex0SubSfCopyName, 'mythor', SuperFile, 'Copy superindex with 0 subfile as superfile:', ''}], rec));
-super0copyOut4 := doSuperCopy(dst4a);
-super0copyOut4Check := checkFile(dst4a[1].destFileName, SuperFile);
+super0copyOut4 := doSuperCopy(superIndex0SubName, superIndex0SubSfCopyName, 'mythor', SuperFile, 'Copy superindex with 0 subfile as superfile:');
+super0copyOut4Check := checkFile(superIndex0SubSfCopyName, SuperFile);
+
 
 
 // Actually this forced to copy as SuperFile. After HPCC-22670 Pr-12891 has been merged, 
 // the target should be a logical file
-dst3b := NOFOLD(DATASET([{superIndex1SubName, superIndex1SubLfCopyName, 'mythor', LogicalFile, 'Copy superindex with 1 subfile as logical file:', ''}], rec));
-super1copyOut3 := doSuperCopy(dst3b);
-super1copyOut3Check := checkFile(dst3b[1].destFileName, LogicalFile);
+super1copyOut3 := doSuperCopy(superIndex1SubName, superIndex1SubLfCopyName, 'mythor', LogicalFile, 'Copy superindex with 1 subfile as logical file:');
+super1copyOut3Check := checkFile(superIndex1SubLfCopyName, LogicalFile);
 
 // The target should be a superindex file
-dst4b := NOFOLD(DATASET([{superIndex1SubName, superIndex1SubSfCopyName, 'mythor', SuperFile, 'Copy superindex with 1 subfile as superfile:', ''}], rec));
-super1copyOut4 := doSuperCopy(dst4b);
-super1copyOut4Check := checkFile(dst4b[1].destFileName, SuperFile);
+super1copyOut4 := doSuperCopy(superIndex1SubName, superIndex1SubSfCopyName, 'mythor', SuperFile, 'Copy superindex with 1 subfile as superfile:');
+super1copyOut4Check := checkFile(superIndex1SubSfCopyName, SuperFile);
+
 
 
 // The target should (forced to) be a superindex file
-dst3c := NOFOLD(DATASET([{superIndex2SubName, superIndex2SubsLfCopyName, 'mythor', LogicalFile, 'Copy superindex with 2 subfiles as logical file:', ''}], rec));
-super2copyOut3 := doSuperCopy(dst3c);
-super2copyOut3Check := checkFile(dst3c[1].destFileName, SuperFile);
+super2copyOut3 := doSuperCopy(superIndex2SubName, superIndex2SubsLfCopyName, 'mythor', LogicalFile, 'Copy superindex with 2 subfiles as logical file:');
+super2copyOut3Check := checkFile(superIndex2SubsLfCopyName, SuperFile);
 
 // The target should be a superindex file
-dst4c := NOFOLD(DATASET([{superIndex2SubName, superIndex2SubsSfCopyName, 'mythor', SuperFile, 'Copy superindex with 2 subfiles as superfile:', ''}], rec));
-super2copyOut4 := doSuperCopy(dst4c);
-super2copyOut4Check := checkFile(dst4c[1].destFileName, SuperFile);
+super2copyOut4 := doSuperCopy(superIndex2SubName, superIndex2SubsSfCopyName, 'mythor', SuperFile, 'Copy superindex with 2 subfiles as superfile:');
+super2copyOut4Check := checkFile(superIndex2SubsSfCopyName, SuperFile);
+
 
 
 // The target should (forced to) be a superindex file
-dst3d := NOFOLD(DATASET([{superIndex3SubsName, superIndex3SubsLfCopyName, 'mythor', LogicalFile, 'Copy superindex with 3 subfiles as logical file:', ''}], rec));
-super3copyOut3 := doSuperCopy(dst3d);
-super3copyOut3Check := checkFile(dst3d[1].destFileName, SuperFile);
+super3copyOut3 := doSuperCopy(superIndex3SubsName, superIndex3SubsLfCopyName, 'mythor', LogicalFile, 'Copy superindex with 3 subfiles as logical file:');
+super3copyOut3Check := checkFile(superIndex3SubsLfCopyName, SuperFile);
 
 // The target should be a superindex file
-dst4d := NOFOLD(DATASET([{superIndex3SubsName, superIndex3SubsSfCopyName, 'mythor', SuperFile, 'Copy superindex with 3 subfiles as superfile:', ''}], rec));
-super3copyOut4 := doSuperCopy(dst4d);
-super3copyOut4Check := checkFile(dst4d[1].destFileName, SuperFile);
-
+super3copyOut4 := doSuperCopy(superIndex3SubsName, superIndex3SubsSfCopyName, 'mythor', SuperFile, 'Copy superindex with 3 subfiles as superfile:');
+super3copyOut4Check := checkFile(superIndex3SubsSfCopyName, SuperFile);
 
 
 SEQUENTIAL(
@@ -305,13 +290,13 @@ SEQUENTIAL(
     // Copy Superfile as a superfile - should pass
     super2copyOut2,
     output(super2copyOut2Check, NAMED('CopySuperfileW2SubsAsSuperFileResult')),
- 
+
     
     // Create superindex without any sub-index file
     FileServices.CreateSuperFile(superIndex0SubName),
 
     
-    // Create superindex witho one sub-index file
+    // Create superindex with one sub-index file
     FileServices.CreateSuperFile(superIndex1SubName),
     FileServices.StartSuperFileTransaction(),
     FileServices.AddSuperFile(superIndex1SubName, albumIndex1Name),
