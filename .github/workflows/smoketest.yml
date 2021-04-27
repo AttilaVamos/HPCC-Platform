@@ -30,6 +30,8 @@
 name: smoketest
 env:
   cacheversion: 2
+  GITHUB_CONTEXT: ${{ toJson(github) }}
+run: echo "$GITHUB_CONTEXT"
 
 on:
   pull_request:
