@@ -30,6 +30,7 @@
 name: smoketest
 env:
   cacheversion: 2
+  GITHUB_CONTEXT: ${{ toJson(github) }}
 
 on:
   pull_request:
@@ -71,9 +72,8 @@ jobs:
 
     steps:
     - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+      run: |
+        echo "$GITHUB_CONTEXT"
 
     - name: Setup and git clone
       id: vars
