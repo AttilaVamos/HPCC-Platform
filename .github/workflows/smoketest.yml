@@ -31,7 +31,6 @@ name: smoketest
 env:
   cacheversion: 2
   GITHUB_CONTEXT: ${{ toJson(github) }}
-run: echo "$GITHUB_CONTEXT"
 
 on:
   pull_request:
@@ -75,6 +74,7 @@ jobs:
     - name: Setup and git clone
       id: vars
       run: |
+	echo "$GITHUB_CONTEXT"
         if [[ "${{ github.event_name }}" = 'pull_request' ]]
         then
           echo ::set-output name=branch::${{ github.head_ref }}
