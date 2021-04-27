@@ -68,14 +68,16 @@ jobs:
     timeout-minutes: 150 # the build step has its own timeout, however the job can sometimes take time to download dependencies
     outputs:
       cache-state: ${{ steps.check-cache.outputs.state }}
-    env:
-      GITHUB_CONTEXT: ${{ toJson(github) }}
 
     steps:
+    - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
     - name: Setup and git clone
       id: vars
       run: |
-	echo "$GITHUB_CONTEXT"
         if [[ "${{ github.event_name }}" = 'pull_request' ]]
         then
           echo ::set-output name=branch::${{ github.head_ref }}
