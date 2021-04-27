@@ -30,7 +30,6 @@
 name: smoketest
 env:
   cacheversion: 2
-  GITHUB_CONTEXT: ${{ toJson(github) }}
 
 on:
   pull_request:
@@ -69,6 +68,8 @@ jobs:
     timeout-minutes: 150 # the build step has its own timeout, however the job can sometimes take time to download dependencies
     outputs:
       cache-state: ${{ steps.check-cache.outputs.state }}
+    env:
+      GITHUB_CONTEXT: ${{ toJson(github) }}
 
     steps:
     - name: Setup and git clone
