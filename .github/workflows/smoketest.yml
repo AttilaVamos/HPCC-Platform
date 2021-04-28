@@ -75,16 +75,9 @@ jobs:
     steps:
     - name: Dump GitHub context
       run: |
-#        echo "GitHub Context:"
-#        echo "$GITHUB_CONTEXT"
-#        echo "----------------------------------------------------------------------------"
         echo "PR Labels:"
         echo "$PR_LABELS"
         echo "----------------------------------------------------------------------------"
-#        echo "Body Context:"
-#        echo "$BODY_CONTEXT"
-#        echo "----------------------------------------------------------------------------"
-
 
     - name: Setup and git clone
       id: vars
