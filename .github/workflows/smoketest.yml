@@ -1,4 +1,4 @@
-# Smoketest github action
+# Smoketest github action 
 # =======================
 #
 # Uses cached instances of previous builds to perform partial (and therefore quicker) incremental builds.
@@ -30,6 +30,9 @@
 name: smoketest
 env:
   cacheversion: 2
+  GITHUB_CONTEXT: ${{ toJson(github) }}
+  PR_LABELS: ${{ toJson(github.event.pull_request.labels) }}
+  BODY_CONTEXT: ${{ toJson(github.body) }}
 
 on:
   pull_request:
@@ -70,6 +73,14 @@ jobs:
       cache-state: ${{ steps.check-cache.outputs.state }}
 
     steps:
+    - name: Dump GitHub context
+      run: |
+        echo "PR Labels:"
+        echo "$PR_LABELS"
+        echo "----------------------------------------------------------------------------"
+        echo "Have 'smoketest-force-rerun': ${{ contains(github.event.pull_request.labels.*.name, 'smoketest-force-rerun') }}"
+        echo "----------------------------------------------------------------------------"
+
     - name: Setup and git clone
       id: vars
       run: |
