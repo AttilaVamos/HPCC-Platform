@@ -78,6 +78,8 @@ jobs:
         echo "PR Labels:"
         echo "$PR_LABELS"
         echo "----------------------------------------------------------------------------"
+        echo "Have 'smoketest-force-rerun': ${{ contains(github.event.pull_request.labels.*.name, 'smoketest-force-rerun') }}"
+        echo "----------------------------------------------------------------------------"
 
     - name: Setup and git clone
       id: vars
