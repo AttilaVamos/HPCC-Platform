@@ -30,7 +30,9 @@
 name: smoketest
 env:
   cacheversion: 2
-  GITHUB_CONTEXT: ${{ toJson(github.event.pull_request) }}
+  GITHUB_CONTEXT: ${{ toJson(github) }}
+  PR_CONTEXT: ${{ toJson(github.event.pull_request) }}
+  BODY_CONTEXT: ${{ toJson(github.body) }}
 
 on:
   pull_request:
@@ -73,7 +75,16 @@ jobs:
     steps:
     - name: Dump GitHub context
       run: |
+        echo "GitHub Context:"
         echo "$GITHUB_CONTEXT"
+        echo "============================================================================"
+        echo "PR Context:"
+        echo "$PR_CONTEXT"
+        echo "============================================================================"
+        echo "Body Context:"
+        echo "$BODY_CONTEXT"
+        echo "============================================================================"
+
 
     - name: Setup and git clone
       id: vars
