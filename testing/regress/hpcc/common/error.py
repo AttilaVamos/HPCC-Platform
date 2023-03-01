@@ -27,7 +27,7 @@ ERROR = {
     "3000": "Return is null",
     "3001": "Return diff does not match.",
     "4000": "Unknown cluster!",
-    "4001": "No ECl file!",
+    "4001": "No ECl file! (If you use single star instead of *.ecl then put it into a quote '*' to avoid bash completion.)",
     "5000": "Missing argument of -X parameter!\nIt should be 'name=val[,name2=val2..]'",
     "6000": "HPCC System is not installed!",
     "6001": "HPCC System is not running!",

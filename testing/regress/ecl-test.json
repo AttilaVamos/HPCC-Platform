@@ -18,20 +18,24 @@
         "zapDir":"zap",
         "regressionDir": "~/HPCCSystems-regression",
         "logDir": "~/HPCCSystems-regression/log",
+        "standaloneBinDir" : "standaloneBinary",
         "Engines": [
             "hthor",
             "thor",
-            "roxie"
+            "roxie",
+            "standalone"
         ],
         "Clusters": {
             "hthor" : "hthor",
             "thor"  : "thor",
-            "roxie" : "roxie"
+            "roxie" : "roxie",
+            "standalone" : "standalone"
         },
         "ClusterNames": {
             "hthor" : "myhthor",
             "thor"  : "mythor",
-            "roxie" : "myroxie"
+            "roxie" : "myroxie",
+            "standalone" : "standalone"
         },
         "timeout":"720",
         "maxAttemptCount":"3",
@@ -39,11 +43,14 @@
         "wuAbortTimeout":"30",
         "usePoll":"False",
         "defaultSetupTargets": [
+            "hthor",
             "thor",
             "roxie"
         ],
         "defaultTargets": [
-            "all"
+            "hthor",
+            "thor",
+            "roxie"
         ],
         "Params":[
             "PassTest.ecl:bla='A value'",

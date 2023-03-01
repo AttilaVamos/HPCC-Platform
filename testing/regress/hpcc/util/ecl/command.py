@@ -39,8 +39,31 @@ class ECLcmd(Shell):
 
     def __ECLcmd(self):
         return self.command(self.cmd, *self.defaults)
+        
+    def runStandalone(self, engine, cluster, eclfile, report, **kwargs):
+        self.cmd = eclfile.getStandaloneBin()
+        args = []
+        args.append('--format=xml')
+        eclfile.setJobname("")
+        results, stderr = self.__ECLcmd()(*args)
+        
+        logger.debug("%3d. results:'%s'", eclfile.getTaskId(),  results)
+        logger.debug("%3d. stderr :'%s'", eclfile.getTaskId(),  stderr)
+        data = '\n'.join(line for line in
+                         results.split('\n') if line) + "\n"
+
+        #ret = data.split('\n')
+        #TO-DO capture and handle output
+        #eclfile.diff=ret
+        
+        eclfile.addResults(data, "N/A")
+        test = eclfile.testResults()
+        report.addResult(eclfile)
+        
+        return test
 
     def runCmd(self, cmd, engine, cluster, eclfile, report, **kwargs):
+        self.cmd = 'ecl'
         args = []
         args.append(cmd)
         args.append('-v')
@@ -134,6 +157,7 @@ class ECLcmd(Shell):
                 if "aborted" in i:
                     state = "aborted"
                 if cnt > 4:
+                    xml =  ET.fromstring("<Empty>-*-* No content *-*-</Empty>")
                     if (i.startswith('<Warning>') or i.startswith('<Exception>')) and ('Filename' in i ):
                         # Remove absolute path from filename to 
                         # enable to compare it with same part of keyfile
@@ -161,9 +185,11 @@ class ECLcmd(Shell):
             data = '\n'.join(line for line in
                              result.split('\n') if line) 
 
-            if len(stderr) > 0 and stderr.startswith('eclcc') :  
+            if len(stderr) > 0 and (stderr.startswith('eclcc')  or stderr.startswith("Exception")):
+                logger.debug("%3d. error:'%s'", eclfile.getTaskId(), stderr )
                 data += '\n'.join(line for line in stderr.split('\n') if line and (' Warning ' not in line) and (' Info ' not in line) and ('0 error(s)' not in line)  ) 
                 
+#            if len(data) > 0:
             data += '\n'
 
         except Error as err:
@@ -216,7 +242,8 @@ class ECLcmd(Shell):
                     test = True
                 else:
                     test = False
-                    eclfile.diff = 'Error'
+                    eclfile.diff = ("%3d. Test: %s\n") % (eclfile.taskId, eclfile.getBaseEclRealName())
+                    eclfile.diff += '\tError: ' + data
             else:
                 if (res['state'] == 'aborted') or eclfile.isAborted():
                     eclfile.diff = ("%3d. Test: %s\n") % (eclfile.taskId, eclfile.getBaseEclRealName())
@@ -241,7 +268,7 @@ class ECLcmd(Shell):
                         eclfile.diff = ("%3d. Test: %s\n") % (eclfile.taskId, eclfile.getBaseEclRealName())
                         eclfile.diff += data
                     test = True
-                elif (res['state'] == 'failed'):
+                elif (res['state'] == 'failed' or res['state'] == 'N/A' ):
                     logger.debug("%3d. in state == failed 'wuid':'%s', 'state':'%s', data':'%s', ", eclfile.getTaskId(), res['wuid'], res['state'], data)
                     resultLines = data.strip().split('\n')
                     resultLinesLen = len(resultLines)
@@ -254,7 +281,7 @@ class ECLcmd(Shell):
                     logger.debug("%3d. State is fail (resultLineIndex:%d, data:'%s' )", eclfile.getTaskId(), resultLineIndex,  data)
                     if ( resultLinesLen > 0 ):
                         # We have some output
-                        if ( resultLineIndex < resultLinesLen ) and ( not resultLines[resultLineIndex].startswith('Error (') ) and not resultLines[resultLineIndex].startswith('<Exception') and not resultLines[resultLineIndex].startswith('eclcc'):
+                        if ( resultLineIndex < resultLinesLen ) and ( not resultLines[resultLineIndex].startswith('Error (') ) and not resultLines[resultLineIndex].startswith('<Exception')  and not resultLines[resultLineIndex].startswith('Exception') and not resultLines[resultLineIndex].startswith('eclcc'):
                             # The output contains some '<Result>' like workflow_contingency_*.ecl compare it and report
                             eclfile.addResults(data, wuid)
                             test = eclfile.testResults()

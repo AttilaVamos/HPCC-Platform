@@ -39,7 +39,10 @@ class ECLCC(Shell):
     def getArchive(self, ecl):
         try:
                 file = ecl.getEcl()
-                return self.__ECLCC()('-E', file)
+                if ecl.testStandalone():
+                    return self.__ECLCC()('-o' + ecl.getStandaloneBin(), file)
+                else:
+                    return self.__ECLCC()('-E', file)
         except Error as err:
             logger.debug("getArchive exception:'%s'",  repr(err))
             self.makeArchiveError = str(err)

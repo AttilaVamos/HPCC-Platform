@@ -92,7 +92,7 @@ class RegressMain:
             exit()
         eclfiles=[]   # List for ECL filenames to be executed
         eclfiles = self.processEclList(self.args.query)
-
+        
         # Go through the cluster list
         for engine in self.targetEngines:
             self.args.engine = engine
@@ -113,6 +113,8 @@ class RegressMain:
             except IOError:
                 logging.error("%s. Some query does not exist!" % (0))
                 exit()
+            except Error as e:
+                logging.critical(e)
             except Exception as e:
                 logging.critical(e)
                 logging.critical(traceback.format_exc())
@@ -151,10 +153,20 @@ class RegressMain:
             
         eclFiles = []
         for ecl in eclItems:
+            logger.debug("ecl:'%s', eclDir:'%s", ecl, eclDir)
             if  ('*' in ecl) or ('?' in ecl):
                 # If there is any wildcard in ECL file name, resolve it
                 eclwild = os.path.join(eclDir, ecl)
+                if not eclwild.endswith('.ecl'):
+                    eclwild += '.ecl'
+                logger.debug("eclwild:'%s", eclwild)
                 eclFiles.extend( glob.glob(eclwild))
+                logger.debug("eclFiles:'%s'",  ', '.join(eclFiles))
+            elif eclDir.endswith(ecl):
+                eclwild = eclDir +  '/*.ecl'
+                logger.debug("eclwild:'%s", eclwild)
+                eclFiles.extend( glob.glob(eclwild))
+                logger.debug("eclFiles:'%s'", ', '.join(eclFiles))
             else:
                 # We have simple ECL file in parameter list, put it on the eclfile list
                 eclPath = os.path.join(eclDir, ecl)
@@ -384,7 +396,7 @@ class RegressMain:
         # Process target parameter
         self.targetEngines = []
         if 'target' in self.args:
-            if '' == self.args.target:
+            if '' == self.args.target or 'all' == self.args.target:  
                 # Target not specified, use default from config
                 try:
                     if self.args.func == 'setup':
@@ -400,14 +412,21 @@ class RegressMain:
                     # It seems there is no defaultSetupTargets|defaultTargets array in the config file
                     # use the first one of cluster list in config file
                     self.targetEngines.append(self.config.Engines[0])
-            elif 'all' == self.args.target:
-                for engine in self.config.Engines:
-                    self.targetEngines.append(str(engine))
             else:
                 if ',' in self.args.target:
                     # target is a list, process it
                     targets = self.args.target.split(',')
                     self.targetEngines = checkClusters(targets, 'target')
+                elif self.args.target in ['standalone']:
+                    if self.args.func == 'setup':
+                        logging.error("%s. '%s' is excluded from Setup." % (1,  self.args.target))
+                    else:
+                        # It seems the eclcc isn't multithread safe when generates standalone binaries
+                        # Force it into sequential mode.
+                        if self.args.pq > 1 or self.args.pq == -1:
+                            logger.warn("Standalone engine doesn't support --pq %d mode. Set it to 1.",  self.args.pq  )
+                            self.args.pq = 1                            
+                        self.targetEngines.append(self.args.target)
                 elif self.args.target in self.config.Engines:
                     self.targetEngines.append(self.args.target)
                 else:

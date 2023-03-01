@@ -77,6 +77,7 @@ class ECLFile:
         self.xml_e = self.baseXml
         self.xml_r = self.baseXml
         self.xml_a = 'archive_' + self.cluster + '_' + self.baseXml
+        self.dir_standalone = args.dir_standalone
         self.jobname = self.basename
         self.diff = ''
         self.aborted = False
@@ -293,6 +294,11 @@ class ECLFile:
     def getWuid(self):
         return self.wuid.strip()
 
+    def getStandaloneBin(self):
+        standaloneBin = self.dir_standalone + '/' + self.basename
+        logger.debug("%3d.getStandaloneBin() return with:'%s'", self.taskId, standaloneBin)
+        return standaloneBin
+
     def setWuid(self,  wuid):
         self.wuid = wuid.strip()
 
@@ -465,6 +471,12 @@ class ECLFile:
     def setVersionId(self,  id):
         self.versionId=id
 
+    def testStandalone(self):
+        logger.debug("%3d. testStandalone(ecl:'%s', engine:'%s')", self.taskId, self.ecl,  self.engine)
+        retVal = (self.engine == "standalone")
+        logger.debug("%3d. testStandalone() returns with: %s",  self.taskId,  retVal)
+        return retVal
+
     def checkFileTimeout(self,  timeout):
         timeout = timeout
         # Standard string has a problem with unicode characters
@@ -495,8 +507,8 @@ class ECLFile:
     def testResults(self):
         try:
             expectedKeyPath = self.getExpected()
-            logger.debug("%3d. EXP: " + expectedKeyPath,  self.taskId )
-            logger.debug("%3d. REC: " + self.getResults(),  self.taskId )
+            logger.debug("%3d. EXP: '" + expectedKeyPath +"'",  self.taskId )
+            logger.debug("%3d. REC: '" + self.getResults() + "'",  self.taskId )
             if not os.path.isfile(expectedKeyPath):
                 self.diff += ("%3d. Test: %s\n") % (self.taskId,  self.getBaseEclRealName())
                 self.diff += "KEY FILE NOT FOUND. " + expectedKeyPath

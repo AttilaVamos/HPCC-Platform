@@ -61,6 +61,7 @@ class Regression:
                 # Emultae timeout to force abort
                 self.timeouts[threadId] = 0
                 self.retryCount = 0
+                #self.args.engine = None # To prevent Stack Trace generation
                 self.CheckTimeout(self.taskParam[threadId]['taskId']+1, threadId,  query)
 
         self.StopTimeoutThread()
@@ -108,6 +109,7 @@ class Regression:
         self.dir_zap =  os.path.join(self.regressionDir,self.config.zapDir)
         self.dir_inc =  self.dir_ec
         self.setupDir = ExpandCheck.dirExists(os.path.join(self.suiteDir, self.config.setupDir), True)
+        self.dir_standalone = os.path.join(self.suiteDir, self.config.standaloneBinDir)
         logger.debug("Suite Dir      : %s", self.suiteDir)
         logger.debug("Setup Dir      : %s", self.setupDir)
         logger.debug("Regression Dir : %s", self.regressionDir)
@@ -118,6 +120,7 @@ class Regression:
         logger.debug("Archive Dir    : %s", self.dir_a)
         logger.debug("ZAP Dir        : %s", self.dir_zap )
         logger.debug("INC Dir        : %s", self.dir_inc )
+        logger.debug("Standalon Dir  : %s", self.dir_standalone )
 
         numOfThreads=1
         if 'pq' in args:
@@ -131,7 +134,7 @@ class Regression:
         self.threadPerCpu = 2
         ver = getVersionNumbers()
         if numOfThreads == -1:
-            if (ver['main'] >= 2) and (ver['minor'] >= 7):
+            if (ver['main'] == 2) and (ver['minor'] >= 7) or ver['main'] >= 3:
                 if 'linux' in sys.platform :
                     command = "grep 'core\|processor' /proc/cpuinfo | awk '{print $3}' | sort -nru | head -1"
                     cpuInfo = os.popen(command).read()
@@ -140,7 +143,7 @@ class Regression:
                     else:
                         self.numOfCpus = int(cpuInfo)+1
                 numOfThreads = self.numOfCpus  * self.threadPerCpu
-            elif (ver['main'] <= 2) and (ver['minor'] < 7):
+            else:
                     numOfThreads = self.numOfCpus  * self.threadPerCpu
         logger.debug("Number of CPUs:%d, NUmber of threads:%d", self.numOfCpus, numOfThreads  )
 
@@ -160,10 +163,11 @@ class Regression:
         self.createDirectory(self.dir_r)
         self.createDirectory(self.logDir)
         self.createDirectory(self.dir_zap)
+        self.createDirectory(self.dir_standalone)
+        args.dir_standalone = self.dir_standalone
 
         self.suites[engine] = Suite(engine, cluster, self.dir_ec, self.dir_a, self.dir_ex, self.dir_r, self.logDir, self.dir_inc, args, False, fileList)
         self.maxtasks = len(self.suites[engine].getSuite())
-        self.maxthreads =args.pq
         self.exitmutexes = [_thread.allocate_lock() for i in range(self.maxthreads)]
         self.timeouts = [(-1) for i in range(self.maxthreads)]
 
@@ -177,6 +181,7 @@ class Regression:
         self.createDirectory(self.dir_r)
         self.createDirectory(self.logDir)
         self.createDirectory(self.dir_zap)
+        args.dir_standalone = self.dir_standalone
         self.setupSuite = Suite(args.engine,  args.cluster, self.setupDir, self.dir_a, self.dir_ex, self.dir_r, self.logDir, self.dir_inc, args, True, args.setup)
         self.maxtasks = len(self.setupSuite.getSuite())
         self.exitmutexes = [_thread.allocate_lock() for i in range(self.maxthreads)]
@@ -371,6 +376,8 @@ class Regression:
                         # Emulatae timeout to force abort
                         self.timeouts[threadId] = 0
                         self.retryCount = 0
+                        #TO-DO is it right?
+                        #self.args.engine = None # To prevent Stack Trace generation
                     else:
                         self.retryCount = int(self.config.maxAttemptCount)
                     self.CheckTimeout(self.taskParam[threadId]['taskId']+1, threadId,  query)
@@ -578,7 +585,11 @@ class Regression:
                                               password=self.config.password,
                                               retryCount=int(self.config.maxAttemptCount))
                         else:
-                            res = eclCmd.runCmd("run", engine, cluster, query, report[0],
+                            if query.testStandalone():
+                                res = eclCmd.runStandalone(engine, cluster, query, report[0])
+                                pass
+                            else:
+                                res = eclCmd.runCmd("run", engine, cluster, query, report[0],
                                               server=self.config.espIp,
                                               username=self.config.username,
                                               password=self.config.password,
@@ -631,6 +642,9 @@ class Regression:
             elif query.testFail():
                 url = "N/A"
                 res = True
+            elif query.testStandalone():
+                url = "N/A"
+                #res = True
             else:
                 url = "N/A"
                 res = False

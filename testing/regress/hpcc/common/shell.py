@@ -24,7 +24,7 @@ from subprocess import (
     Popen,
     CalledProcessError
 )
-from ..common.error import Error
+#from ..common.error import Error
 
 logger = logging.getLogger('RegressionTestEngine')
 

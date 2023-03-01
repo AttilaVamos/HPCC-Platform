@@ -321,12 +321,18 @@ def checkClusters(clusters,  targetSet):
     targetEngines =[]
     if 'all' in clusters:
         for engine in gConfig.Engines:
-            targetEngines.append(str(engine))
+            if engine != 'standalone':
+                targetEngines.append(str(engine))
+            else:
+                logger.debug("%3d. engine: %s filtered out from targets in checkClusters()" % (1,  engine))
     else:
         for engine in clusters:
             engine = engine.strip()
             if engine in gConfig.Engines:
-                targetEngines.append(engine)
+                if engine != 'standalone':
+                    targetEngines.append(engine)
+                else:
+                    logger.debug("%3d. engine: %s filtered out from targets in checkClusters()" % (1,  engine))
             else:
                 logger.error("%s. Unknown engine:'%s' in %s:'%s'!" % (1,  engine,  targetSet,  clusters))
                 raise Error("4000")

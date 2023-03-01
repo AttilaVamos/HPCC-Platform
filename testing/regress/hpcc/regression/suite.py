@@ -142,7 +142,7 @@ class Suite:
                 for instance in range(self.args.runcount):
                     try:
                         newEcl = copy.copy(ecl)
-                    except:
+                    except Exception as e:
                         logging.debug( e, extra={'taskId':-1})
                         logging.debug("%s",  traceback.format_exc().replace("\n","\n\t\t"),  extra={'taskId':-1} )
                         pass
