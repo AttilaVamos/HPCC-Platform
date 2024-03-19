@@ -20,7 +20,7 @@ preamble,build-docker,build-bare-metal -->Build-Assets::build-bare-metal-eclide 
 build -->Build-and-publish::ml-builds ;
 pre_job -->CodeQL-ECL-Watch::analyze ;
 pre_job -->Run-helm-chart-tests::build ;
-main -->Smoketest-Package-(gh-runner)::succeeded ;
+main -->Smoketest-Package-gh-runner::succeeded ;
 Regression-Suite-on-K8s::build-docker --> ./.github/workflows/build-docker.yml ;
 build-docker -->Regression-Suite-on-K8s::main ;
 main -->Regression-Suite-on-K8s::succeeded ;
