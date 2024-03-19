@@ -12,7 +12,7 @@ Test
 ```
 Test 2
 ```mermaid
-  graph TD;
+  graph LR;
 pre_job -->build ;
 preamble -->build-docker ;
 preamble -->build-bare-metal ;
