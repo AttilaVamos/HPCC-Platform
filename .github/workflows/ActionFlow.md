@@ -27,9 +27,9 @@ build-bare-metal[build-bare-metal]
 preamble -->Build_Assets::build-bare-metal ;
 build-bare-metal-eclide[build-bare-metal-eclide]
 preamble,build-docker,build-bare-metal -->Build_Assets::build-bare-metal-eclide ;
-Build_Package_-Docker-[Build Package (Docker)]
+Build_Package_-Docker-["Build Package (Docker)"]
 build-docker[build-docker]
-Build_Package_-gh-runner-[Build Package (gh-runner)]
+Build_Package_-gh-runner-["Build Package (gh-runner)"]
 build-gh_runner[build-gh_runner]
 Build_Test_ECL_Watch[Build Test ECL Watch]
 pre_job[pre_job]
