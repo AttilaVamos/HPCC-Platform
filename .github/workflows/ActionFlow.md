@@ -13,13 +13,13 @@ Test
 Test 2
 ```mermaid
   graph LR;
-Build_and_publish_debug["Build and publish debug"]
+Build_and_publish_debug["Build and publish debug [build-and-publish-debug.yml]"]
 build["build"]
-Build_and_publish["Build and publish"]
+Build_and_publish["Build and publish [build-and-publish.yml]"]
 build["build"]
 ml-builds["ml-builds"]
 build -->Build_and_publish-->ml-builds ;
-Build_Assets["Build Assets"]
+Build_Assets["Build Assets [build-assets.yml]"]
 preamble["preamble"]
 build-docker["build-docker"]
 preamble -->Build_Assets-->build-docker ;
@@ -27,15 +27,15 @@ build-bare-metal["build-bare-metal"]
 preamble -->Build_Assets-->build-bare-metal ;
 build-bare-metal-eclide["build-bare-metal-eclide"]
 preamble,build-docker,build-bare-metal -->Build_Assets-->build-bare-metal-eclide ;
-Build_Package_-Docker-["Build Package (Docker)"]
+Build_Package_-Docker-["Build Package (Docker) [build-docker.yml]"]
 build-docker["build-docker"]
-Build_Package_-gh-runner-["Build Package (gh-runner)"]
+Build_Package_-gh-runner-["Build Package (gh-runner) [build-gh_runner.yml]"]
 build-gh_runner["build-gh_runner"]
-Build_Test_ECL_Watch["Build Test ECL Watch"]
+Build_Test_ECL_Watch["Build Test ECL Watch [build-test-eclwatch.yml]"]
 pre_job["pre_job"]
 build["build"]
 pre_job -->Build_Test_ECL_Watch-->build ;
-Test_Build["Test Build"]
+Test_Build["Test Build [build-vcpkg.yml]"]
 build-workflow-dispatch["build-workflow-dispatch"]
 Build_Package_-Docker-["Build Package (Docker)"]
 Test_Build-->build-workflow-dispatch --> Build_Package_-Docker- ;
@@ -90,23 +90,23 @@ Test_Build-->build-gh_runner-macos-12 --> Build_Package_-gh-runner- ;
 build-gh_runner-macos-11["build-gh_runner-macos-11"]
 Build_Package_-gh-runner-["Build Package (gh-runner)"]
 Test_Build-->build-gh_runner-macos-11 --> Build_Package_-gh-runner- ;
-CodeQL_ECL_Watch["CodeQL ECL Watch"]
+CodeQL_ECL_Watch["CodeQL ECL Watch [codeql-eclwatch.yml]"]
 pre_job["pre_job"]
 analyze["analyze"]
 pre_job -->CodeQL_ECL_Watch-->analyze ;
-Deploy_vitepress_content_to_Pages["Deploy vitepress content to Pages"]
+Deploy_vitepress_content_to_Pages["Deploy vitepress content to Pages [deploy-docs.yml]"]
 deploy["deploy"]
+jirabot["jirabot [jirabot.yml]"]
 jirabot["jirabot"]
-jirabot["jirabot"]
-Nightly_master_build_and_publish["Nightly master build and publish"]
+Nightly_master_build_and_publish["Nightly master build and publish [nightly-publish.yml]"]
 build["build"]
-Check_that_eclhelper_interface_has_not_changed["Check that eclhelper interface has not changed"]
+Check_that_eclhelper_interface_has_not_changed["Check that eclhelper interface has not changed [test-eclhelper.yml]"]
 build["build"]
-Run_helm_chart_tests["Run helm chart tests"]
+Run_helm_chart_tests["Run helm chart tests [test-helm.yml]"]
 pre_job["pre_job"]
 build["build"]
 pre_job -->Run_helm_chart_tests-->build ;
-Regression_Suite_on_K8s["Regression Suite on K8s"]
+Regression_Suite_on_K8s["Regression Suite on K8s [test-regression-suite-k8s.yml]"]
 build-docker["build-docker"]
 Build_Package_-Docker-["Build Package (Docker)"]
 Regression_Suite_on_K8s-->build-docker --> Build_Package_-Docker- ;
@@ -114,12 +114,12 @@ main["main"]
 build-docker -->Regression_Suite_on_K8s-->main ;
 succeeded["succeeded"]
 main -->Regression_Suite_on_K8s-->succeeded ;
-Smoketest_Package_-gh-runner-["Smoketest Package (gh-runner)"]
+Smoketest_Package_-gh-runner-["Smoketest Package (gh-runner) [test-smoke-gh_runner.yml]"]
 main["main"]
 succeeded["succeeded"]
 main -->Smoketest_Package_-gh-runner--->succeeded ;
-UI_test_Package_-gh-runner-["UI test Package (gh-runner)"]
+UI_test_Package_-gh-runner-["UI test Package (gh-runner) [test-ui-gh_runner.yml]"]
 main["main"]
-Unittest_Package_-gh-runner-["Unittest Package (gh-runner)"]
+Unittest_Package_-gh-runner-["Unittest Package (gh-runner) [test-unit-gh_runner.yml]"]
 main["main"]
 ```
