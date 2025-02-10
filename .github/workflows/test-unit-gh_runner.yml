@@ -42,6 +42,8 @@ jobs:
           sudo apt-get install -y ${{ inputs.dependencies }}
           sudo apt-get install -y gdb
           echo 'core_%e.%p' | sudo tee /proc/sys/kernel/core_pattern
+          ulimit -c unlimited
+          ulimit -c
 
       - name: Install Package
         shell: "bash"
@@ -54,14 +56,9 @@ jobs:
         shell: "bash"
         run: |
           set +e     # Ignore intermediate error(s) in this step
-          set +x
           ulimit -c unlimited
           ulimit -c
-          pwd
-          whoami
-          df -h .
-          echo 'core_%e.%p' | sudo tee /proc/sys/kernel/core_pattern
-          cat /proc/sys/kernel/core_pattern
+
           export LANG="en_US.UTF-8"
           sudo update-locale
           while read test
@@ -71,60 +68,23 @@ jobs:
             /opt/HPCCSystems/bin/unittests -e "$test"
             echo " "
           done< <(/opt/HPCCSystems/bin/unittests -l | sort )
-          ls -lh
-          res=$(sudo find / -iname 'core_*.[0-9]*' -type f -print 2>&1)
-          echo "ret code: $?"
-          echo "res:$res"
-          df -h .
-          echo "  End."
-
-      - name: Generate core
-        shell: "bash"
-        run: |
-          set +e     # Ignore intermediate error(s) in this step
-          ulimit -c unlimited
-          ulimit -c
-          CPP_SOURCE_NAME=mycrash.cpp
-          CPP_BIN_NAME=mycrash
-          echo '#include "stdio.h"'               >  $CPP_SOURCE_NAME
-          echo 'int main(int argc, char* argv[])' >> $CPP_SOURCE_NAME
-          echo '{'                                >> $CPP_SOURCE_NAME
-          echo '  int *p;'                        >> $CPP_SOURCE_NAME
-          echo '  *p = 0;'                        >> $CPP_SOURCE_NAME
-          echo '  return 0;'                      >> $CPP_SOURCE_NAME
-          echo '}'                                >> $CPP_SOURCE_NAME      
-          res=$( c++ $CPP_SOURCE_NAME -o $CPP_BIN_NAME 2>&1)
-          echo "$res"
-          chmod +x ./$CPP_BIN_NAME
-
-          echo "Execute ${CPP_BIN_NAME} to create core dump!"
-          res=$( ./${CPP_BIN_NAME} 2>&1 )
-          echo "res: $?." 
-          find . -maxdepth 1 -name 'core*' -type f -print
-          sudo ls -l
-          cores=( $( find . -maxdepth 1 -name 'core*' -type f ) )
-          echo "core: ${cores[@]}"
 
       - name: Check for Core files
         shell: "bash"
         run: |
           set +e     # Ignore intermediate error(s) in this step
-          set +x
-          df -h .
-          cat /proc/sys/kernel/core_pattern
-          echo "pwd: $(pwd)"
-          echo "I am $(whoami)"
+
           mkdir -p /home/runner/HPCCSystems-regression/log
           ls -l
-          #shopt -s nullglob
-          #CORE_FILES=(core_*)
-          #echo "NUM_OF_CORES=${#CORE_FILES[@]}" >> $GITHUB_ENV
-          #echo "NUM_OF_CORES=${#CORE_FILES[@]}"
-          echo "cores: $(sudo find / -iname 'core_*.[0-9]*' -type f -print 2>&1 )"
-          CORE_FILES=$(sudo find / -iname 'core_*.[0-9]*' -type f -print)
+          shopt -s nullglob
+          CORE_FILES=(core_*)
           echo "NUM_OF_CORES=${#CORE_FILES[@]}" >> $GITHUB_ENV
           echo "NUM_OF_CORES=${#CORE_FILES[@]}"
-          #echo "${CORE_FILES[*]}"
+          echo "cores: $(sudo find / -iname 'core_*.[0-9]*' -type f -print 2>&1 )"
+          #CORE_FILES=$(sudo find / -iname 'core_*.[0-9]*' -type f -print)
+          #echo "NUM_OF_CORES=${#CORE_FILES[@]}" >> $GITHUB_ENV
+          #echo "NUM_OF_CORES=${#CORE_FILES[@]}"
+          echo "${CORE_FILES[*]}"
           echo "Let's go...."
           if [[ ${#CORE_FILES[@]} -ne 0 ]]
           then
