@@ -166,7 +166,12 @@ static void sighandler(int signum, siginfo_t *info, void *extra)
     else
     {
         enableMemLeakChecking(false);
+
+#ifdef _COVERAGE
+        exit(2);
+#else
         _exit(2);
+#endif
     }
 }
 
@@ -639,7 +644,12 @@ int main(int argc, const char *argv[])
         //In release mode exit without calling all the clean up code.
         //It is faster, and it helps avoid potential crashes if there are active objects which depend on objects in file hook dlls.
         fflush(NULL);
+
+#ifdef _COVERAGE
+        exit(exitCode);
+#else
         _exit(exitCode);
+#endif
     }
 
     configuration.clear();
