@@ -639,18 +639,15 @@ int main(int argc, const char *argv[])
         exitCode = 2;
     }
 
+#ifndef _COVERAGE
     if (!optReleaseAllMemory)
     {
         //In release mode exit without calling all the clean up code.
         //It is faster, and it helps avoid potential crashes if there are active objects which depend on objects in file hook dlls.
         fflush(NULL);
-
-#ifdef _COVERAGE
-        exit(exitCode);
-#else
         _exit(exitCode);
-#endif
     }
+#endif
 
     configuration.clear();
     releaseAtoms();
