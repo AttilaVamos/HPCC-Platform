@@ -2020,7 +2020,10 @@ bool CJHInplaceLeafNode::fetchPayload(unsigned int index, char *dst, PayloadRefe
         //Ensure the payload stays alive for the duration of this call, and is likely preserved until
         //the next call.  Always replacing is as efficient as conditional - since we are using a move operator.
         activePayload.data = std::move(sharedPayload);
-        payloadData = activePayload.data.get();
+
+        // Do not update the payload with the dummy recording entry
+        if (expandPayloadOnDemand)
+            payloadData = activePayload.data.get();
     }
 
     unsigned len = keyCompareLen;
